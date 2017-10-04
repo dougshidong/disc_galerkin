@@ -9,7 +9,7 @@ use matrices
 implicit none
 
 !real(dp) :: xmin = 0.0d0, xmax = PI
-real(dp) :: xmin = -1.5d0, xmax = 1.5d0
+real(dp) :: xmin, xmax
 real(dp), allocatable :: ref(:), weights(:)
 integer :: tscheme
 real(dp) :: fscheme, wavespeed
@@ -18,6 +18,8 @@ integer :: i, j
 real(dp), allocatable :: u(:,:)
 real(dp) :: finalTime, denom, numer1,numer2
 
+icase = 1
+
 order   = 6
 nele    = 50
 open(unit=1,file="input.in",form='formatted')
@@ -25,6 +27,7 @@ read(1,*) order, nele
 close(1)
 tscheme = 1
 fscheme = 0.0d0
+!fscheme = 1.0d0
 wavespeed = 1.0d0
 finalTime = 0.50d0!1.0d0!2*PI
 
@@ -32,6 +35,26 @@ nref    = order + 1
 nvertex = nele + 1
 nface   = 2
 nfpoint = 1
+
+! Generate 1D grid and map reference elements
+allocate(EtoV(2,nele))
+allocate(vertices(nvertex))
+allocate(x(nref,nele), rx(nref,nele))
+allocate(u(nref,nele))
+allocate(normals(nfpoint*nface,nele))
+allocate(Fx(2,nele))
+allocate(Fscale(2,nele))
+u = 0.0d0
+select case(icase)
+    case(0)
+        xmin = 0.0d0
+        xmax = PI
+    case(1)
+        xmin = -2.0d0
+        xmax = 2.0d0
+    case default
+        print *, 'Invalid case'
+end select
 
 ! Setup mass, Vandermonde, differentiation and lift matrices
 call allocate_matrices
@@ -74,29 +97,10 @@ call massToStiff(ref, poly_alpha, poly_beta, order, VandermondeInv, Differentiat
 ! Evaluate lift matrix
 call lift1d(Vandermonde, Lift)
 
-! Generate 1D grid and map reference elements
-allocate(EtoV(2,nele))
-allocate(vertices(nvertex))
-allocate(x(nref,nele), rx(nref,nele))
-allocate(u(nref,nele))
-allocate(normals(nfpoint*nface,nele))
-allocate(Fx(2,nele))
-allocate(Fscale(2,nele))
 call genGrid(ref, xmin, xmax)
-
-! Initial conditions
-u = 0.0d0
-do i = 1, nele
-do j = 1, nref
- if(abs(x(j,i)).lt.1.0) then
-    u(j,i) = exp(-1.0d0/(1.0d0-x(j,i)**2))
- end if
-end do
-end do
-!u = sin(x)
+call initialize_u(u, x)
 
 open(unit=7, file='output.dat', form='formatted')
-!write(7,11) 'Initial u'
 do i = 1, nele
 do j = 1, nref
  if(abs(u(j,i)).le.1e-30) u(j,i) = 0.0d0
@@ -135,15 +139,14 @@ real(dp), intent(in) :: finalTime, wavespeed, fscheme
 real(dp), intent(inout) :: u(:,:)
 
 integer :: tstep, nstep, intrk
-real(dp) :: timelocal, time, dxmin, CFL, dt, alpha
+real(dp) :: timelocal, time, dxmin, CFL, dt
 real(dp), allocatable :: resiu(:,:), rhsu(:,:)
 real(dp) :: rk4a(5), rk4b(5), rk4c(5)
 
 allocate(resiu(nref,nele))
 allocate(rhsu(nref,nele))
 
-alpha = 1.0d0
-CFL = 0.005d0
+CFL = 0.05d0
 time = 0.0d0
 resiu = 0.0d0
 
@@ -194,6 +197,31 @@ deallocate(rhsu, resiu)
 return
 
 end subroutine advec1D
+
+subroutine initialize_u(u, x)
+use glob
+use prec
+implicit none
+real(dp), intent(in) :: x(nref,nele)
+real(dp), intent(out) :: u(nref,nele)
+integer :: i, j
+u = 0.0d0
+select case(icase)
+    case(0)
+        u = sin(x)
+    case(1)
+        do j = 1, nele
+        do i = 1, nref
+         if(abs(x(i,j)).lt.1.0) then
+            u(i,j) = exp(-1.0d0/(1.0d0-x(i,j)**2))
+         end if
+        end do
+        end do
+    case default
+        print *, 'Invalid case'
+end select
+
+end subroutine initialize_u
 
 
 end program adv

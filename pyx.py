@@ -14,12 +14,15 @@ from scipy.stats import linregress
 np.set_printoptions(precision=15)
 np.set_printoptions(linewidth=132)
 
+testcase = 1
 finalTime = 0.5
 elements = np.arange(25,201,25)
 elements = np.array([10, 20, 40, 80, 160, 220])
 elements = np.arange(25,301,25)
 orders = range(1,9)
-nn = 6
+nn = 7
+if(testcase == 0): nn = 2
+if(testcase == 0): orders = range(1,9)
 elements = 2*np.logspace(0,nn,num=nn+1,base=2)
 #elements = 10*np.linspace(1,nn,num=nn)
 if(len(sys.argv) == 1):
@@ -59,7 +62,7 @@ if(len(sys.argv) == 1):
             for ix, xx in enumerate(xe):
                 if -1.0+finalTime < xx < 1.0+finalTime:
                     ue[ix] = np.exp(-1.0/(1.0-(xx-finalTime)**2))
-            #ue = np.sin(xe-finalTime)
+            if(testcase == 0): ue = np.sin(xe-finalTime)
 
 #           plt.figure()
 #           plt.plot(x,u0,'-bo',mec='blue',mfc='None')
@@ -71,7 +74,7 @@ if(len(sys.argv) == 1):
             for ix, xx in enumerate(x):
                 if -1.0+finalTime < xx < 1.0+finalTime:
                     ue[ix] = np.exp(-1.0/(1.0-(xx-finalTime)**2))
-            #ue = np.sin(x-finalTime)
+            if(testcase == 0): ue = np.sin(x-finalTime)
 
             error[i,j] = np.linalg.norm((ue[:] - uf[:])) / np.linalg.norm(ue[:])
             #error[i,j] = np.linalg.norm((ue[:] - uf[:]),2)
