@@ -5,12 +5,14 @@ use grid
 use glob
 use poly
 use matrices
+use quadrature
 
 implicit none
 
 !real(dp) :: xmin = 0.0d0, xmax = PI
 real(dp) :: xmin, xmax
 real(dp), allocatable :: ref(:), weights(:)
+real(dp), allocatable :: temp_nref(:)
 integer :: tscheme
 real(dp) :: fscheme, wavespeed
 integer :: i, j
@@ -36,42 +38,18 @@ nvertex = nele + 1
 nface   = 2
 nfpoint = 1
 
-! Generate 1D grid and map reference elements
-allocate(EtoV(2,nele))
-allocate(vertices(nvertex))
-allocate(x(nref,nele), rx(nref,nele))
-allocate(u(nref,nele))
-allocate(normals(nfpoint*nface,nele))
-allocate(Fx(2,nele))
-allocate(Fscale(2,nele))
-u = 0.0d0
-select case(icase)
-    case(0)
-        xmin = 0.0d0
-        xmax = PI
-    case(1)
-        xmin = -2.0d0
-        xmax = 2.0d0
-    case default
-        print *, 'Invalid case'
-end select
-
 ! Setup mass, Vandermonde, differentiation and lift matrices
 call allocate_matrices
 
-! Determine points in reference element
+! Setup Quadrature
+quad_npts = order+1
+call initialize_quad
+! Select points in reference element
 allocate(ref(nref), weights(nref))
+allocate(temp_nref(nref))
 weights = 1.0d0
 poly_alpha = 0.0d0
 poly_beta = 0.0d0
-if(order == 1) then
-    ref(1) = -1.0d0
-    ref(2) = 1.0d0
-else
-    call JacobiGQ(ref(2:order), weights, poly_alpha+1.0d0, poly_beta+1.0d0, order-2)
-    ref(1) = -1.0d0
-    ref(nref) = 1.0d0
-end if
 call legendreGLNodesWeights(order, ref, weights)
 
 call JacobiGQ(ref, weights, poly_alpha, poly_beta, order)
@@ -92,38 +70,49 @@ end do
 
 ! Evaluate transformation matrices
 !allocate( V(nref,nref), invV(nref,nref), Dr(nref,nref) )
-call modalToNodal(ref, poly_alpha, poly_beta, order, Vandermonde, VandermondeInv)
-call massToStiff(ref, poly_alpha, poly_beta, order, VandermondeInv, Differentiation)
-! Evaluate lift matrix
-call lift1d(Vandermonde, Lift)
+call buildVandermonde(ref)
+call buildMass
+call buildStiffness
+call buildDifferentiation
+call buildLift
+
+!call modalToNodal(ref, poly_alpha, poly_beta, order, Vandermonde, VandermondeInv)
+!call massToStiff(ref, poly_alpha, poly_beta, order, VanderInv, Differentiation)
+!call lift1d(Vander, Lift)
 
 call genGrid(ref, xmin, xmax)
+
+allocate(u(nref,nele))
 call initialize_u(u, x)
 
 open(unit=7, file='output.dat', form='formatted')
-do i = 1, nele
-do j = 1, nref
- if(abs(u(j,i)).le.1e-30) u(j,i) = 0.0d0
- write(7,11) x(j,i), u(j,i)
+do i = 1, nref
+do j = 1, nele
+ if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
+ write(7,11) x(i,j), u(i,j)
 end do
 end do
 
 call advec1D(u, tscheme, fscheme, wavespeed, finalTime)
 
-call deallocate_matrices
-
 !write(7,11) 'Final u'
-do i = 1, nele
-do j = 1, nref
- if(abs(u(j,i)).le.1e-30) u(j,i) = 0.0d0
- write(7,11) x(j,i), u(j,i)
+do i = 1, nref
+do j = 1, nele
+ if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
+ write(7,11) x(i,j), u(i,j)
 end do
 end do
 ! weights
 do i = 1, nref
- write(7,11) ref(i), weights(i)
+ write(7,11) xquad(i), wquad(i)
 end do
 close(7)
+
+
+! Deallocate matrices
+call deallocate_matrices
+call finalize_quad
+call finalize_grid
 
 11 FORMAT(' ',4E23.14)
 return
@@ -146,7 +135,7 @@ real(dp) :: rk4a(5), rk4b(5), rk4c(5)
 allocate(resiu(nref,nele))
 allocate(rhsu(nref,nele))
 
-CFL = 0.05d0
+CFL = 0.1d0
 time = 0.0d0
 resiu = 0.0d0
 
@@ -203,7 +192,7 @@ use glob
 use prec
 implicit none
 real(dp), intent(in) :: x(nref,nele)
-real(dp), intent(out) :: u(nref,nele)
+real(dp), intent(out) :: u(:,:)
 integer :: i, j
 u = 0.0d0
 select case(icase)

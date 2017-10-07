@@ -6,41 +6,20 @@ module grid
     integer, allocatable :: EtoV(:,:)
     real(dp), allocatable :: vertices(:)
     real(dp), allocatable :: x(:,:)
-    real(dp), allocatable :: Fx(:,:), Fscale(:,:)
+    real(dp), allocatable :: Fscale(:,:)
     real(dp), allocatable :: Jac(:,:)
     real(dp), allocatable :: rx(:,:)
     real(dp), allocatable :: normals(:,:)
 
     contains
-!   Read grid from grid.dat file
-    subroutine readGrid
-    implicit none
-    integer :: gfile = 1
-    integer :: i
-
-    open(unit=gfile, file="grid.dat", action="read", form="formatted")
-    read(*,*)
-    read(*,*) order
-    read(*,*)
-    read(*,*) nele
-    nvertex = nele+1
-    read(*,*)
-
-    allocate(EtoV(2,nele))
-    allocate(vertices(nvertex))
-
-    do i = 1, nvertex
-        read(*,*) vertices(i)
-    end do
-    do i = 1, nele
-        read(*,*) EtoV(1,i), EtoV(2,i)
-    end do
-    close(gfile)
-    return
-
-    end subroutine readGrid
-
-    ! Generate an equally spaced grid
+    subroutine finalize_grid
+    deallocate(EtoV)
+    deallocate(vertices)
+    deallocate(x, rx)
+    deallocate(normals)
+    deallocate(Fscale)
+    end subroutine finalize_grid
+    ! Generate an equally spaced grid of elements
     subroutine genGrid(ref, xmin, xmax)
     use glob
     use prec
@@ -50,6 +29,23 @@ module grid
     integer :: i, j
     real(dp) :: xmin, xmax, L
     real(dp) :: ref(:)
+
+    ! Generate 1D grid and map reference elements
+    allocate(EtoV(2,nele))
+    allocate(vertices(nvertex))
+    allocate(x(nref,nele), rx(nref,nele))
+    allocate(normals(nfpoint*nface,nele))
+    allocate(Fscale(2,nele))
+    select case(icase)
+        case(0)
+            xmin = 0.0d0
+            xmax = PI
+        case(1)
+            xmin = -2.0d0
+            xmax = 2.0d0
+        case default
+            print *, 'Invalid case'
+    end select
 
     L = xmax - xmin
 
@@ -80,8 +76,6 @@ module grid
     ! rx is the geometric factor (2 / h^k)
     rx = 1.0d0 / Jac
     do i = 1, nele
-        Fx(1,i) = x(1,i)
-        Fx(2,i) = x(nref,i)
         Fscale(1,i) = 1/Jac(1,i)
         Fscale(2,i) = 1/Jac(nref,i)
     end do

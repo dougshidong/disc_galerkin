@@ -1,9 +1,9 @@
 MF=     Makefile
 
 FC=     gfortran
-#FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
-
 FFLAGS= -O3
+FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+
 
 LFLAGS= $(FFLAGS)
 LIBS= -L/usr/lib -llapack -lblas
@@ -13,8 +13,10 @@ EXE=    advection
 SRC= \
 		prec.f90    \
 		glob.f90    \
-		matrices.f90	\
+		quadrature.f90	\
+		jacobi.f90	\
 		poly.f90	\
+		matrices.f90	\
 		grid.f90	\
 		legendreGLNodesWeights.f90	\
 		legendreNM.f90	\

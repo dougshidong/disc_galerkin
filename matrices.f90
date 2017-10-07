@@ -50,6 +50,7 @@ module matrices
         integer :: iref, jref
         integer :: info, ipiv(nref)
 
+        ! Evaluate Mass matrix
         do iref = 1, nref
         call poly_eval(polytype, iref-1, xquad, ipolyVal) 
         do jref = 1, nref
@@ -57,11 +58,9 @@ module matrices
             tempMass(iref,jref) = integrate(ipolyVal*jpolyVal)
         end do
         end do
-        call printMatrix(tempMass)
-        !Mass = tempMass ! if modal
-        !Mass = matmul(matmul(VanderInv, tempMass), transpose(VanderInv))
+        ! Change of basis to Lagrange polynomial
         Mass = matmul(matmul(transpose(VanderInv), tempMass), VanderInv)
-        ! Evaluate inverse Mass
+        ! Evaluate inverse Mass matrix
         tempMass = Mass
         MassInv = 0.0d0
         do iref = 1, nref
@@ -84,8 +83,6 @@ module matrices
         call polyGrad_eval(polytype, iref-1, xquad, polyGrad) 
         do jref = 1, nref
             call poly_eval(polytype, jref-1, xquad, polyVal) 
-            print*, iref, jref
-            print*, polyGrad*polyVal
             ! Weak form dl*l
             !tempStiff(iref,jref) = integrate(polyGrad*polyVal)
             ! Strong form l*dl
@@ -93,11 +90,7 @@ module matrices
         end do
         end do
         !Stiff = matmul(matmul(VanderInv, tempStiff), transpose(VanderInv))
-        print *, 'BeforeStiff'
-        call printMatrix(tempStiff)
         Stiff = matmul(matmul(transpose(VanderInv), tempStiff), VanderInv)
-        print *, 'Stiff'
-        call printMatrix(Stiff)
     end subroutine buildStiffness
 
     subroutine buildDifferentiation
@@ -105,7 +98,19 @@ module matrices
     end subroutine buildDifferentiation
 
     subroutine buildLift
-    Lift = matmul(MassInv,Stiff)
+    implicit none
+    integer :: iref
+    real(dp) :: refSurf(2)
+    real(dp) :: polyValSurf(2)
+    real(dp) :: basisSurf(nref,2)
+    refSurf(1) = -1.0d0
+    refSurf(2) = 1.0d0
+    do iref = 1, nref
+        call poly_eval(polytype, iref-1, refSurf, polyValSurf) 
+        basisSurf(iref,:) = polyValSurf
+    end do
+    VanderSurf = matmul(transpose(VanderInv),basisSurf)
+    Lift = matmul(MassInv,VanderSurf)
     end subroutine buildLift
 
     subroutine allocate_matrices
@@ -113,7 +118,7 @@ module matrices
         implicit none
         allocate(Lift(nref, nface*nfpoint))
         allocate(Vander(nref,nref), VanderInv(nref,nref))
-        allocate(VanderSurf(nface*nfpoint,nref))
+        allocate(VanderSurf(nref,nface*nfpoint))
         allocate(Mass(nref,nref), MassInv(nref,nref))
         allocate(Stiff(nref,nref))
         allocate(Differentiation(nref,nref))
