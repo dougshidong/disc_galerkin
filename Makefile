@@ -15,6 +15,8 @@ SRC= \
 		glob.f90    \
 		quadrature.f90	\
 		jacobi.f90	\
+		monomial.f90	\
+                bezier.f90      \
 		poly.f90	\
 		matrices.f90	\
 		grid.f90	\

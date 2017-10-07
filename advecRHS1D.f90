@@ -20,6 +20,7 @@ do iele = 1, nele
     uface(1,iele) = dot_product(u(:,iele), L1(:))
     uface(2,iele) = dot_product(u(:,iele), L2(:))
 end do
+uface = matmul(transpose(VanderSurf), u)
 
 ! Inlet
 select case(icase)

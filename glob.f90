@@ -7,7 +7,7 @@ integer :: nele, nvertex, nref, nface, nfpoint
 real(dp), parameter :: PI=4.D0*DATAN(1.D0)
 real(dp),allocatable :: L1(:), L2(:)
 integer :: iequation = 1, icase
-integer :: polytype = 999
+integer :: polytype = 1
 
 contains 
 

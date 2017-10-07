@@ -9,7 +9,6 @@ use quadrature
 
 implicit none
 
-!real(dp) :: xmin = 0.0d0, xmax = PI
 real(dp) :: xmin, xmax
 real(dp), allocatable :: ref(:), weights(:)
 real(dp), allocatable :: temp_nref(:)
@@ -20,7 +19,7 @@ integer :: i, j
 real(dp), allocatable :: u(:,:)
 real(dp) :: finalTime, denom, numer1,numer2
 
-icase = 1
+icase = 0
 
 order   = 6
 nele    = 50
@@ -42,7 +41,6 @@ nfpoint = 1
 call allocate_matrices
 
 ! Setup Quadrature
-quad_npts = order+1
 call initialize_quad
 ! Select points in reference element
 allocate(ref(nref), weights(nref))
@@ -75,6 +73,13 @@ call buildMass
 call buildStiffness
 call buildDifferentiation
 call buildLift
+!call printmatrix(Mass)
+!print*,
+!call printmatrix(Stiff)
+!print*,
+!call printmatrix(Differentiation)
+!print*,
+!call printmatrix(Lift)
 
 !call modalToNodal(ref, poly_alpha, poly_beta, order, Vandermonde, VandermondeInv)
 !call massToStiff(ref, poly_alpha, poly_beta, order, VanderInv, Differentiation)
@@ -84,20 +89,22 @@ call genGrid(ref, xmin, xmax)
 
 allocate(u(nref,nele))
 call initialize_u(u, x)
+!u = matmul(VanderInv,u)
 
 open(unit=7, file='output.dat', form='formatted')
-do i = 1, nref
 do j = 1, nele
+do i = 1, nref
  if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
  write(7,11) x(i,j), u(i,j)
 end do
 end do
 
 call advec1D(u, tscheme, fscheme, wavespeed, finalTime)
+!u = rx*matmul(Differentiation,u)
 
 !write(7,11) 'Final u'
-do i = 1, nref
 do j = 1, nele
+do i = 1, nref
  if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
  write(7,11) x(i,j), u(i,j)
 end do

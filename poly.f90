@@ -2,6 +2,8 @@ module poly
 use prec
 use glob
 use jacobi
+use monomial
+use bezier
 
 real(dp) :: poly_alpha, poly_beta
 
@@ -13,6 +15,11 @@ integer :: polytype, nth
 real(dp) :: polyx(:), polyVal(:)
 
 select case(polytype)
+    case(1)
+        call binomial_eval
+        call BezierP(polyx, nth, order, polyVal)
+    case(8)
+        call monomialP(polyx, nth, polyVal)
     case default
         call JacobiP(polyx, jacobi_alpha, jacobi_beta, nth, polyVal)
 end select
@@ -24,6 +31,11 @@ integer :: polytype, nth
 real(dp) :: polyx(:), polyGrad(:)
 
 select case(polytype)
+    case(1)
+        call binomial_eval
+        call gradBezierP(polyx, nth, order, polyGrad)
+    case(8)
+        call gradMonomialP(polyx, nth, polyGrad)
     case default
         call gradJacobiP(polyx, jacobi_alpha, jacobi_beta, nth, polyGrad)
 end select

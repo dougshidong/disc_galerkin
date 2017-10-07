@@ -8,6 +8,8 @@ real(dp), allocatable :: xquad(:), wquad(:)
 contains
 
 subroutine initialize_quad
+use glob, only: order
+quad_npts = order+1
 allocate(xquad(quad_npts), wquad(quad_npts))
 call JacobiGQ(xquad, wquad, quad_alpha, quad_beta, quad_npts-1)
 end subroutine initialize_quad
@@ -30,9 +32,8 @@ integer,    intent(in)  :: order
 real(dp),   intent(out)  :: ref(order+1), weights(order+1)
 
 real(dp) :: Jac(order+1, order+1)
-integer :: i,j
 real(dp) :: h, eps = 1.0e-10
-
+integer ::i
 integer :: lda, info, lwork
 integer,parameter :: lwmax = 100
 real(dp) :: eigval(order+1), eigvec(order+1, order+1), work(lwmax)

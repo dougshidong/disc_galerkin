@@ -14,7 +14,7 @@ from scipy.stats import linregress
 np.set_printoptions(precision=15)
 np.set_printoptions(linewidth=132)
 
-testcase = 1
+testcase = 0
 finalTime = 0.5
 elements = np.arange(25,201,25)
 elements = np.array([10, 20, 40, 80, 160, 220])
@@ -64,11 +64,12 @@ if(len(sys.argv) == 1):
                     ue[ix] = np.exp(-1.0/(1.0-(xx-finalTime)**2))
             if(testcase == 0): ue = np.sin(xe-finalTime)
 
-#           plt.figure()
-#           plt.plot(x,u0,'-bo',mec='blue',mfc='None')
-#           plt.plot(x,uf,'-ro',mec='red',mfc='None')
-#           plt.plot(xe,ue,'-k')
-#           plt.show()
+            plt.figure()
+            plt.plot(x,u0,'-bo',mec='blue',mfc='None')
+            plt.plot(x,uf,'-ro',mec='red',mfc='None')
+            plt.plot(xe,ue,'-k')
+            plt.show()
+            plt.close()
 
             ue = 0.0*x
             for ix, xx in enumerate(x):
