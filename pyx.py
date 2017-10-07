@@ -19,11 +19,11 @@ finalTime = 0.5
 elements = np.arange(25,201,25)
 elements = np.array([10, 20, 40, 80, 160, 220])
 elements = np.arange(25,301,25)
-orders = range(1,9)
+orders = np.arange(1,9,dtype=np.int32)
 nn = 7
 if(testcase == 0): nn = 2
-if(testcase == 0): orders = range(1,9)
-elements = 2*np.logspace(0,nn,num=nn+1,base=2)
+if(testcase == 0): orders = np.arange(1,9,dtype=np.int32)
+elements = 2*np.logspace(0,nn,num=nn+1,base=2,dtype=np.int32)
 #elements = 10*np.linspace(1,nn,num=nn)
 if(len(sys.argv) == 1):
     inf = 'input.in'
