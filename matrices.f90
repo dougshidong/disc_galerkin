@@ -98,13 +98,14 @@ module matrices
     end subroutine buildDifferentiation
 
     subroutine buildLift
+    use glob, only: refa, refb
     implicit none
     integer :: iref
     real(dp) :: refSurf(2)
     real(dp) :: polyValSurf(2)
     real(dp) :: basisSurf(nref,2)
-    refSurf(1) = -1.0d0
-    refSurf(2) = 1.0d0
+    refSurf(1) = refa
+    refSurf(2) = refb
     do iref = 1, nref
         call poly_eval(polytype, iref-1, refSurf, polyValSurf) 
         basisSurf(iref,:) = polyValSurf

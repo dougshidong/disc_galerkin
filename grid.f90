@@ -43,6 +43,9 @@ module grid
         case(1)
             xmin = -2.0d0
             xmax = 2.0d0
+        case(2)
+            xmin = -2.0d0
+            xmax = 2.0d0
         case default
             print *, 'Invalid case'
     end select
@@ -65,6 +68,8 @@ module grid
     do j = 1, nele
         x(i,j) = vertices(EtoV(1,j)) &
             + 0.5 * (ref(i)+1.0d0) * (vertices(EtoV(2,j)) - vertices(EtoV(1,j)))
+        x(i,j) = vertices(EtoV(1,j)) &
+            + 1.0d0/(refb-refa) * (ref(i)-refa) * (vertices(EtoV(2,j)) - vertices(EtoV(1,j)))
     end do
     end do
 

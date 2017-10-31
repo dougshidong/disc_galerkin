@@ -16,10 +16,6 @@ real(dp) :: uin, u1, u2, n1, n2
 integer :: iele, iface
 
 uface = 0.0d0
-do iele = 1, nele
-    uface(1,iele) = dot_product(u(:,iele), L1(:))
-    uface(2,iele) = dot_product(u(:,iele), L2(:))
-end do
 uface = matmul(transpose(VanderSurf), u)
 
 ! Inlet
@@ -28,6 +24,8 @@ select case(icase)
         uin = -sin(wavespeed*time)
     case(1)
         uin = 0.0d0
+    case(2)
+        uin = -1.0d0
     case default
         print *, 'Invalid case'
 end select

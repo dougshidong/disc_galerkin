@@ -17,9 +17,11 @@ real(dp) :: fscheme, wavespeed
 integer :: i, j
 
 real(dp), allocatable :: u(:,:)
+real(dp), allocatable :: umodal(:,:)
+real(dp), allocatable :: xsol(:,:), usol(:,:)
+real(dp), allocatable :: VanderQuad(:,:)
+real(dp), allocatable :: polyVal(:)
 real(dp) :: finalTime, denom, numer1,numer2
-
-icase = 0
 
 order   = 6
 nele    = 50
@@ -30,7 +32,7 @@ tscheme = 1
 fscheme = 0.0d0
 !fscheme = 1.0d0
 wavespeed = 1.0d0
-finalTime = 0.50d0!1.0d0!2*PI
+finalTime = 0.50d0
 
 nref    = order + 1
 nvertex = nele + 1
@@ -48,26 +50,24 @@ allocate(temp_nref(nref))
 weights = 1.0d0
 poly_alpha = 0.0d0
 poly_beta = 0.0d0
-call legendreGLNodesWeights(order, ref, weights)
-
-call JacobiGQ(ref, weights, poly_alpha, poly_beta, order)
-allocate(L1(nref),L2(nref))
-do i = 1, nref
-    numer1 = 1.0d0
-    numer2 = 1.0d0
-    denom = 1.0d0
-    do j = 1, nref
-        if(i.eq.j) cycle
-        numer1 = numer1*(-1.0d0-ref(j))
-        numer2 = numer2*(1.0d0-ref(j))
-        denom = denom*(ref(i)-ref(j))
-    end do
-    L1(i) = numer1/denom
-    L2(i) = numer2/denom
-end do
+! Node Selection
+select case(select_node)
+    case(1) ! Legendre-Gauss-Lobatto
+        call legendreGLNodesWeights(order, ref, weights)
+    case(2) ! Gauss-Legendre
+        call JacobiGQ(ref, weights, poly_alpha, poly_beta, order)
+    case(3) ! Uniform distribution
+        do i = 1, nref
+           ref(i) = refa + (i-1)*(refb-refa)/nref
+        end do
+    case default
+        print*, 'Invalid node distribution. Using GL.'
+        call JacobiGQ(ref, weights, poly_alpha, poly_beta, order)
+end select
+! Node distribution normalization to reference element
+ref = 0.5d0*((refb-refa)*ref+(refa+refb))
 
 ! Evaluate transformation matrices
-!allocate( V(nref,nref), invV(nref,nref), Dr(nref,nref) )
 call buildVandermonde(ref)
 call buildMass
 call buildStiffness
@@ -81,6 +81,12 @@ call buildLift
 !print*,
 !call printmatrix(Lift)
 
+!call printmatrix(matmul(Mass,MassInv))
+!print*,
+!call printmatrix(matmul(Vander,VanderInv))
+!print*,
+
+! Old subroutines replaced by more general formulations
 !call modalToNodal(ref, poly_alpha, poly_beta, order, Vandermonde, VandermondeInv)
 !call massToStiff(ref, poly_alpha, poly_beta, order, VanderInv, Differentiation)
 !call lift1d(Vander, Lift)
@@ -89,30 +95,75 @@ call genGrid(ref, xmin, xmax)
 
 allocate(u(nref,nele))
 call initialize_u(u, x)
-!u = matmul(VanderInv,u)
+
+! umodal = VanderInv * u
+allocate(xsol(quad_npts,nele))
+allocate(usol(quad_npts,nele))
+allocate(VanderQuad(quad_npts, nref))
+allocate(polyVal(quad_npts))
+! Evaluate Vandermonde
+do j = 0, order
+    call poly_eval(polytype, j, xquad, polyVal)
+    VanderQuad(1:quad_npts,j+1) = polyVal
+end do
+u = matmul(VanderInv,u)
+usol = matmul(VanderQuad,u)
+u = matmul(Vander,u)
+do i = 1, quad_npts
+do j = 1, nele
+    xsol(i,j) = vertices(EtoV(1,j)) &
+        + 1.0d0/(refb-refa) &!xquad(quad_npts)-xquad(1)) &
+        * (xquad(i)-refa) * (vertices(EtoV(2,j)) - vertices(EtoV(1,j)))
+end do
+end do
 
 open(unit=7, file='output.dat', form='formatted')
+! do j = 1, nele
+! do i = 1, nref
+!  if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
+!  write(7,11) x(i,j), u(i,j)
+! end do
+! end do
 do j = 1, nele
-do i = 1, nref
- if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
- write(7,11) x(i,j), u(i,j)
+do i = 1, quad_npts
+ if(abs(usol(i,j)).le.1e-30) usol(i,j) = 0.0d0
+ write(7,11) xsol(i,j), usol(i,j)
 end do
 end do
 
 call advec1D(u, tscheme, fscheme, wavespeed, finalTime)
+
+
+! umodal = VanderInv * u
+u = matmul(VanderInv,u)
+usol = matmul(VanderQuad,u)
+u = matmul(Vander,u)
+!print*, xquad - ref
 !u = rx*matmul(Differentiation,u)
 
-!write(7,11) 'Final u'
 do j = 1, nele
-do i = 1, nref
- if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
- write(7,11) x(i,j), u(i,j)
+do i = 1, quad_npts
+ if(abs(usol(i,j)).le.1e-30) usol(i,j) = 0.0d0
+ write(7,11) xsol(i,j), usol(i,j)
 end do
 end do
-! weights
-do i = 1, nref
+do i = 1, quad_npts
  write(7,11) xquad(i), wquad(i)
 end do
+
+!do j = 1, nele
+!do i = 1, nref
+! if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
+! write(7,11) x(i,j), u(i,j)
+!end do
+!end do
+!! weights
+!do i = 1, nref
+! write(7,11) xquad(i), wquad(i)
+!end do
+
+
+
 close(7)
 
 
@@ -121,7 +172,7 @@ call deallocate_matrices
 call finalize_quad
 call finalize_grid
 
-11 FORMAT(' ',4E23.14)
+11 FORMAT(' ',4E24.15)
 return
 contains
 
@@ -213,6 +264,8 @@ select case(icase)
          end if
         end do
         end do
+    case(2)
+        u = x/abs(x)
     case default
         print *, 'Invalid case'
 end select

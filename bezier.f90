@@ -1,4 +1,6 @@
 module bezier
+! NOTE: Changing the typical interval of [0,1] to [-1,1] to conform with the
+!       other bases. Done by making x = (x+1)/2
 use prec
 use glob
 implicit none
@@ -15,7 +17,7 @@ integer,    intent(in)  :: k, n
 
 P = 0.0d0
 if(k.lt.0 .or. n.lt.0 .or. k.gt.n) return
-P = bin_array(n+(1),k+(1)) * (1.0d0-x)**(n-k) * x**(k)
+P = bin_array(n+(1),k+(1)) * (1.0d0-(x+1.0d0)*0.5d0)**(n-k) * ((x+1.0d0)*0.5d0)**(k)
 return
 end subroutine BezierP
 
@@ -28,7 +30,7 @@ real(dp), dimension(size(x)) :: P1, P2
 call BezierP(x, k-1, n-1, P1)
 call BezierP(x, k, n-1, P2)
 P = n*(P1-P2)
-!P = bin_array(n-1+(1),k+(1)) * (1.0d0-x)**(n-1-k) * x**(k) * n
+P = P * 0.5d0 ! Change of interval
 return
 end subroutine gradBezierP
 
