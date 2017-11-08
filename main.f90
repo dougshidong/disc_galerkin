@@ -6,6 +6,7 @@ use glob
 use poly
 use matrices
 use quadrature
+use stability
 
 implicit none
 
@@ -74,6 +75,15 @@ call buildMass
 call buildStiffness
 call buildDifferentiation
 call buildLift
+
+j = 10
+do i = 0, j
+wavenumber = 2.0d0*PI/j * i - PI
+call check_stability(wavenumber)
+end do
+stop
+!call printmatrix(Vander)
+!print*,
 !call printmatrix(Mass)
 !print*,
 !call printmatrix(Stiff)

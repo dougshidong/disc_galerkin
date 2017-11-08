@@ -2,7 +2,7 @@ MF=     Makefile
 
 FC=     gfortran
 FFLAGS= -O3
-FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow# -finit-real=nan
 
 
 LFLAGS= $(FFLAGS)
@@ -14,9 +14,10 @@ SRC= \
 		prec.f90    \
 		glob.f90    \
 		quadrature.f90	\
+		bspline.f90	\
 		jacobi.f90	\
 		monomial.f90	\
-                bezier.f90      \
+        bezier.f90      \
 		poly.f90	\
 		matrices.f90	\
 		grid.f90	\
@@ -24,6 +25,7 @@ SRC= \
 		legendreNM.f90	\
 		lift1D.f90	\
 		advecRHS1D.f90	\
+		stability.f90	\
 		main.f90
 
 #
