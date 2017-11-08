@@ -7,14 +7,15 @@ integer :: nele, nvertex, nref, nface, nfpoint
 real(dp), parameter :: PI=4.D0*DATAN(1.D0)
 integer :: iequation = 1, icase = 0
 ! 1 = Bezier
+! 2 = BSpline
 ! 8 = Monomial
 ! Default = Legendre
-integer :: polytype = 8
+integer :: polytype = 1
 ! Node distribution selection
 ! 1 = Legendre-Gauss-Lobatto
 ! 2 = Gauss-Legendre
 ! 3 = Uniform distribution
-integer :: select_node = 2
+integer :: select_node = 1
 ! Reference element Coordinates
 real(dp) :: refa = -1.0d0
 real(dp) :: refb = 1.0d0

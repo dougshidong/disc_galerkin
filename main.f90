@@ -14,14 +14,15 @@ real(dp), allocatable :: ref(:), weights(:)
 real(dp), allocatable :: temp_nref(:)
 integer :: tscheme
 real(dp) :: fscheme, wavespeed
-integer :: i, j
+integer :: i, j, k, l
 
 real(dp), allocatable :: u(:,:)
-real(dp), allocatable :: umodal(:,:)
 real(dp), allocatable :: xsol(:,:), usol(:,:)
 real(dp), allocatable :: VanderQuad(:,:)
 real(dp), allocatable :: polyVal(:)
-real(dp) :: finalTime, denom, numer1,numer2
+real(dp) :: finalTime
+
+real(dp) :: wavenumber ! For stability analysis
 
 order   = 6
 nele    = 50
@@ -131,15 +132,33 @@ do i = 1, quad_npts
 end do
 end do
 
-call advec1D(u, tscheme, fscheme, wavespeed, finalTime)
-
-
-! umodal = VanderInv * u
-u = matmul(VanderInv,u)
-usol = matmul(VanderQuad,u)
-u = matmul(Vander,u)
-!print*, xquad - ref
-!u = rx*matmul(Differentiation,u)
+if(icase.lt.3) then
+    call advec1D(u, tscheme, fscheme, wavespeed, finalTime)
+    ! umodal = VanderInv * u
+    u = matmul(VanderInv,u)
+    usol = matmul(VanderQuad,u)
+    u = matmul(Vander,u)
+else if(icase.eq.3) then
+    u = rx*matmul(Differentiation,u)
+    u = matmul(VanderInv,u)
+    usol = matmul(VanderQuad,u)
+else if(icase.eq.4) then
+    call bspline_init
+    do k = 1, bs_nbasis
+        do l = 1, nele
+        call bsplineP(x(:,l), k, bs_order, u(:,l))
+        end do
+        u = matmul(VanderInv,u)
+        usol = matmul(VanderQuad,u)
+        u = matmul(Vander,u)
+        do j = 1, nele
+        do i = 1, quad_npts
+         if(abs(usol(i,j)).le.1e-30) usol(i,j) = 0.0d0
+         write(7,11) xsol(i,j), usol(i,j)
+        end do
+        end do
+    end do
+end if
 
 do j = 1, nele
 do i = 1, quad_npts
@@ -193,7 +212,7 @@ real(dp) :: rk4a(5), rk4b(5), rk4c(5)
 allocate(resiu(nref,nele))
 allocate(rhsu(nref,nele))
 
-CFL = 0.1d0
+CFL = 0.001d0
 time = 0.0d0
 resiu = 0.0d0
 

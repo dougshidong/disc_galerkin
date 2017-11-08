@@ -100,15 +100,15 @@ module matrices
     subroutine buildLift
     use glob, only: refa, refb
     implicit none
-    integer :: iref
+    integer :: ibasis
     real(dp) :: refSurf(2)
     real(dp) :: polyValSurf(2)
     real(dp) :: basisSurf(nref,2)
     refSurf(1) = refa
     refSurf(2) = refb
-    do iref = 1, nref
-        call poly_eval(polytype, iref-1, refSurf, polyValSurf) 
-        basisSurf(iref,:) = polyValSurf
+    do ibasis = 0, order
+        call poly_eval(polytype, ibasis, refSurf, polyValSurf) 
+        basisSurf(ibasis+1,:) = polyValSurf
     end do
     VanderSurf = matmul(transpose(VanderInv),basisSurf)
     Lift = matmul(MassInv,VanderSurf)

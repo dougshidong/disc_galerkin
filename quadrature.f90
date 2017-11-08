@@ -9,7 +9,7 @@ real(dp), allocatable :: xquad(:), wquad(:)
 contains
 
 subroutine initialize_quad
-use glob, only: order,nref,select_node
+use glob, only: nref,select_node
 quad_npts = nref
 allocate(xquad(quad_npts), wquad(quad_npts))
 select case(select_node)

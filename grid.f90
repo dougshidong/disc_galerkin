@@ -46,6 +46,12 @@ module grid
         case(2)
             xmin = -2.0d0
             xmax = 2.0d0
+        case(3)
+            xmin = -1.0d0
+            xmax = 1.0d0
+        case(4)
+            xmin = -1.0d0
+            xmax = 1.0d0
         case default
             print *, 'Invalid case'
     end select

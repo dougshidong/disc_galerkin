@@ -4,6 +4,7 @@ use glob
 use jacobi
 use monomial
 use bezier
+use bspline
 
 real(dp) :: poly_alpha, poly_beta
 
@@ -14,10 +15,14 @@ implicit none
 integer :: polytype, nth
 real(dp) :: polyx(:), polyVal(:)
 
+!nth = 0, ..., nbasis
 select case(polytype)
     case(1)
         call binomial_eval
         call BezierP(polyx, nth, order, polyVal)
+    case(2)
+        call bspline_init
+        call bsplineP(polyx, nth+1, bs_order, polyVal)
     case(8)
         call monomialP(polyx, nth, polyVal)
     case default
@@ -34,6 +39,9 @@ select case(polytype)
     case(1)
         call binomial_eval
         call gradBezierP(polyx, nth, order, polyGrad)
+    case(2)
+        call bspline_init
+        call gradbsplineP(polyx, nth+1, bs_order, polyGrad)
     case(8)
         call gradMonomialP(polyx, nth, polyGrad)
     case default
