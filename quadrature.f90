@@ -11,11 +11,12 @@ contains
 subroutine initialize_quad
 use glob, only: nref,select_node
 quad_npts = nref
+quad_npts = nref
 allocate(xquad(quad_npts), wquad(quad_npts))
 select case(select_node)
-    case(1) ! Legendre-Gauss-Lobatto
+    case(11) ! Legendre-Gauss-Lobatto
         call legendreGLNodesWeights(quad_npts-1, xquad, wquad)
-    case(2) ! Gauss-Legendre
+    case(21) ! Gauss-Legendre
         call JacobiGQ(xquad, wquad, quad_alpha, quad_beta, quad_npts-1)
     case default
         call JacobiGQ(xquad, wquad, quad_alpha, quad_beta, quad_npts-1)

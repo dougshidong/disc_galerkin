@@ -23,7 +23,9 @@ real(dp), allocatable :: VanderQuad(:,:)
 real(dp), allocatable :: polyVal(:)
 real(dp) :: finalTime
 
-real(dp) :: wavenumber ! For stability analysis
+!Stability analysis
+real(dp) :: wavenumber
+complex(dp), allocatable :: eig(:)
 
 order   = 6
 nele    = 50
@@ -60,7 +62,7 @@ select case(select_node)
         call JacobiGQ(ref, weights, poly_alpha, poly_beta, order)
     case(3) ! Uniform distribution
         do i = 1, nref
-           ref(i) = refa + (i-1)*(refb-refa)/nref
+           ref(i) = refa + (i-1)*(refb-refa)/(nref-1)
         end do
     case default
         print*, 'Invalid node distribution. Using GL.'
@@ -76,12 +78,6 @@ call buildStiffness
 call buildDifferentiation
 call buildLift
 
-j = 10
-do i = 0, j
-wavenumber = 2.0d0*PI/j * i - PI
-call check_stability(wavenumber)
-end do
-stop
 !call printmatrix(Vander)
 !print*,
 !call printmatrix(Mass)
@@ -103,6 +99,20 @@ stop
 !call lift1d(Vander, Lift)
 
 call genGrid(ref, xmin, xmax)
+
+!allocate(eig(nref))
+!wavenumber = 1.0
+!call check_stability(wavenumber, eig)
+!stop
+!j = 100
+!do i = 0, j
+!    wavenumber = 2.0d0*PI/j * i - PI
+!    call check_stability(wavenumber, eig)
+!end do
+!stop
+
+call stable_dt
+stop
 
 allocate(u(nref,nele))
 call initialize_u(u, x)
