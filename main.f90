@@ -100,36 +100,43 @@ call buildLift
 
 call genGrid(ref, xmin, xmax)
 
-!allocate(eig(nref))
-!wavenumber = 1.0
-!call check_stability(wavenumber, eig)
-!stop
-!j = 100
-!do i = 0, j
-!    wavenumber = 2.0d0*PI/j * i - PI
-!    call check_stability(wavenumber, eig)
-!end do
-!stop
-
-call stable_dt
-stop
+! Stability analysis
+select case(istab)
+    case(1)
+        allocate(eig(nref))
+        wavenumber = 1.0
+        call check_stability(wavenumber, eig)
+        stop
+    case(2)
+        allocate(eig(nref))
+        j = 100
+        do i = 0, j
+            wavenumber = 2.0d0*PI/j * i - PI
+            call check_stability(wavenumber, eig)
+        end do
+        stop
+    case(3)
+        call stable_dt
+    case default
+end select
 
 allocate(u(nref,nele))
 call initialize_u(u, x)
-
 ! umodal = VanderInv * u
+if(.not. inodal) u = matmul(VanderInv,u)
+
 allocate(xsol(quad_npts,nele))
 allocate(usol(quad_npts,nele))
 allocate(VanderQuad(quad_npts, nref))
 allocate(polyVal(quad_npts))
-! Evaluate Vandermonde
+! Evaluate Vandermonde matrix at quadrature (output) points
 do j = 0, order
     call poly_eval(polytype, j, xquad, polyVal)
     VanderQuad(1:quad_npts,j+1) = polyVal
 end do
-u = matmul(VanderInv,u)
+if(inodal) u = matmul(VanderInv,u)
 usol = matmul(VanderQuad,u)
-u = matmul(Vander,u)
+if(inodal) u = matmul(Vander,u)
 do i = 1, quad_npts
 do j = 1, nele
     xsol(i,j) = vertices(EtoV(1,j)) &
@@ -139,12 +146,6 @@ end do
 end do
 
 open(unit=7, file='output.dat', form='formatted')
-! do j = 1, nele
-! do i = 1, nref
-!  if(abs(u(i,j)).le.1e-30) u(i,j) = 0.0d0
-!  write(7,11) x(i,j), u(i,j)
-! end do
-! end do
 do j = 1, nele
 do i = 1, quad_npts
  if(abs(usol(i,j)).le.1e-30) usol(i,j) = 0.0d0
@@ -152,25 +153,45 @@ do i = 1, quad_npts
 end do
 end do
 
+!if(inodal) call printmatrix(matmul(Differentiation,u))
+!if(.not.inodal) call printmatrix(matmul(Vander,matmul(Differentiation,u)))
+!stop
 if(icase.lt.3) then
     call advec1D(u, tscheme, fscheme, wavespeed, finalTime)
     ! umodal = VanderInv * u
-    u = matmul(VanderInv,u)
+    if(inodal) u = matmul(VanderInv,u)
     usol = matmul(VanderQuad,u)
-    u = matmul(Vander,u)
+    if(inodal) u = matmul(Vander,u)
 else if(icase.eq.3) then
-    u = rx*matmul(Differentiation,u)
-    u = matmul(VanderInv,u)
+    u = drdx*matmul(Differentiation,u)
+    if(inodal) u = matmul(VanderInv,u)
     usol = matmul(VanderQuad,u)
+    if(inodal) u = matmul(Vander,u)
 else if(icase.eq.4) then
     call bspline_init
     do k = 1, bs_nbasis
         do l = 1, nele
         call bsplineP(x(:,l), k, bs_order, u(:,l))
         end do
-        u = matmul(VanderInv,u)
+        if(inodal) u = matmul(VanderInv,u)
         usol = matmul(VanderQuad,u)
-        u = matmul(Vander,u)
+        if(inodal) u = matmul(Vander,u)
+        do j = 1, nele
+        do i = 1, quad_npts
+         if(abs(usol(i,j)).le.1e-30) usol(i,j) = 0.0d0
+         write(7,11) xsol(i,j), usol(i,j)
+        end do
+        end do
+    end do
+else if(icase.eq.5) then
+    call nurbs_init
+    do k = 1, nurbs_nbasis
+        do l = 1, nele
+        call nurbsP(x(:,l), k, nurbs_order, u(:,l))
+        end do
+        if(inodal) u = matmul(VanderInv,u)
+        usol = matmul(VanderQuad,u)
+        if(inodal) u = matmul(Vander,u)
         do j = 1, nele
         do i = 1, quad_npts
          if(abs(usol(i,j)).le.1e-30) usol(i,j) = 0.0d0
@@ -294,6 +315,8 @@ integer :: i, j
 u = 0.0d0
 select case(icase)
     case(0)
+        u = sin(x)
+    case(3)
         u = sin(x)
     case(1)
         do j = 1, nele

@@ -5,47 +5,54 @@ use jacobi
 use monomial
 use bezier
 use bspline
+use nurbs
 
 real(dp) :: poly_alpha, poly_beta
 
 contains
 
-subroutine poly_eval(polytype, nth, polyx, polyVal) 
+subroutine poly_eval(polytype, ibasis, polyx, polyVal) 
 implicit none
-integer :: polytype, nth
+integer :: polytype, ibasis
 real(dp) :: polyx(:), polyVal(:)
 
-!nth = 0, ..., nbasis
+!ibasis = 0, ..., nbasis
 select case(polytype)
     case(1)
         call binomial_eval
-        call BezierP(polyx, nth, order, polyVal)
+        call BezierP(polyx, ibasis, order, polyVal)
     case(2)
         call bspline_init
-        call bsplineP(polyx, nth+1, bs_order, polyVal)
+        call bsplineP(polyx, ibasis+1, bs_order, polyVal)
+    case(3)
+        call nurbs_init
+        call nurbsP(polyx, ibasis+1, bs_order, polyVal)
     case(8)
-        call monomialP(polyx, nth, polyVal)
+        call monomialP(polyx, ibasis, polyVal)
     case default
-        call JacobiP(polyx, jacobi_alpha, jacobi_beta, nth, polyVal)
+        call JacobiP(polyx, jacobi_alpha, jacobi_beta, ibasis, polyVal)
 end select
 end subroutine poly_eval
 
-subroutine polyGrad_eval(polytype, nth, polyx, polyGrad) 
+subroutine polyGrad_eval(polytype, ibasis, polyx, polyGrad) 
 implicit none
-integer :: polytype, nth
+integer :: polytype, ibasis
 real(dp) :: polyx(:), polyGrad(:)
 
 select case(polytype)
     case(1)
         call binomial_eval
-        call gradBezierP(polyx, nth, order, polyGrad)
+        call gradBezierP(polyx, ibasis, order, polyGrad)
     case(2)
         call bspline_init
-        call gradbsplineP(polyx, nth+1, bs_order, polyGrad)
+        call gradbsplineP(polyx, ibasis+1, bs_order, polyGrad)
+    case(3)
+        call nurbs_init
+        call gradnurbsP(polyx, ibasis+1, bs_order, polyGrad)
     case(8)
-        call gradMonomialP(polyx, nth, polyGrad)
+        call gradMonomialP(polyx, ibasis, polyGrad)
     case default
-        call gradJacobiP(polyx, jacobi_alpha, jacobi_beta, nth, polyGrad)
+        call gradJacobiP(polyx, jacobi_alpha, jacobi_beta, ibasis, polyGrad)
 end select
 end subroutine polyGrad_eval
 

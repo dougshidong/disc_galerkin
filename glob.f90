@@ -5,12 +5,25 @@ implicit none
 integer :: order
 integer :: nele, nvertex, nref, nface, nfpoint
 real(dp), parameter :: PI=4.D0*DATAN(1.D0)
-integer :: iequation = 1, icase = 0
+!logical :: inodal = .true.
+logical :: inodal = (.not. .true.)
+integer :: iequation = 1
+! 0 = sine
+! 1 = Bump
+! 2 = x/abs(x)
+! 3 = Differentiation of sine
+! 4 = Plot B-Splines
+integer :: icase = 0
+! 1 = Evaluate eig[semi-discrete]
+! 2 = Evaluate eig[semi-discrete] for all wavenumbers
+! 3 = Find maximum dt for various RK
+integer :: istab = 1
 ! 1 = Bezier
 ! 2 = BSpline
+! 3 = NURBS
 ! 8 = Monomial
 ! Default = Legendre
-integer :: polytype = 8
+integer :: polytype = 9
 ! Node distribution selection
 ! 1 = Legendre-Gauss-Lobatto
 ! 2 = Gauss-Legendre

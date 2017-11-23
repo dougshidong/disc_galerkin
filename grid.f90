@@ -1,21 +1,21 @@
 module grid
     use glob
     use prec
-    use matrices, only: Differentiation
+    use matrices!, only: Differentiation, Vander
 
     integer, allocatable :: EtoV(:,:)
     real(dp), allocatable :: vertices(:)
     real(dp), allocatable :: x(:,:)
     real(dp), allocatable :: Fscale(:,:)
-    real(dp), allocatable :: Jac(:,:)
-    real(dp), allocatable :: rx(:,:)
+    real(dp), allocatable :: dxdr(:,:)
+    real(dp), allocatable :: drdx(:,:)
     real(dp), allocatable :: normals(:,:)
 
     contains
     subroutine finalize_grid
     deallocate(EtoV)
     deallocate(vertices)
-    deallocate(x, rx)
+    deallocate(x, drdx, dxdr)
     deallocate(normals)
     deallocate(Fscale)
     end subroutine finalize_grid
@@ -33,9 +33,9 @@ module grid
     ! Generate 1D grid and map reference elements
     allocate(EtoV(2,nele))
     allocate(vertices(nvertex))
-    allocate(x(nref,nele), rx(nref,nele))
+    allocate(x(nref,nele), drdx(nref,nele), dxdr(nref,nele))
     allocate(normals(nfpoint*nface,nele))
-    allocate(Fscale(2,nele))
+    allocate(Fscale(nfpoint*nface,nele))
     select case(icase)
         case(0)
             xmin = 0.0d0
@@ -47,8 +47,8 @@ module grid
             xmin = -2.0d0
             xmax = 2.0d0
         case(3)
-            xmin = -1.0d0
-            xmax = 1.0d0
+            xmin = -2*PI
+            xmax = 2*PI
         case(4)
             xmin = -1.0d0
             xmax = 1.0d0
@@ -83,12 +83,13 @@ module grid
     normals(1,:) = -1.0d0
     normals(2,:) = 1.0d0
 
-    Jac = matmul(Differentiation,x)
-    ! rx is the geometric factor (2 / h^k)
-    rx = 1.0d0 / Jac
+    dxdr = matmul(Differentiation,x)
+    if(.not. inodal) dxdr = matmul(Vander,matmul(Differentiation,matmul(VanderInv,x)))
+    ! drdx is the geometric factor (2 / h^k)
+    drdx = 1.0d0 / dxdr
     do i = 1, nele
-        Fscale(1,i) = 1/Jac(1,i)
-        Fscale(2,i) = 1/Jac(nref,i)
+        Fscale(1,i) = 1/dxdr(1,i)
+        Fscale(2,i) = 1/dxdr(nref,i)
     end do
 
  

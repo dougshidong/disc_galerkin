@@ -89,6 +89,7 @@ complex(dp) :: SD(nref,nref) ! Semi-discrete matrix [d/dt] [u] = [S] [u]
 complex(dp) :: eig(nref)
 
 call build_semidiscrete(wavenumber,SD)
+if(istab.eq.1) call print_cmatrix(SD)
 
 call complex_eig(SD,eig,nref)
 call print_cvector(eig)

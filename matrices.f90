@@ -1,5 +1,6 @@
 module matrices
     use prec
+    use glob, only: inodal
     use poly
     ! Mass = inv(V*V^T) = inv(V^T)*inv(V)
     ! MassInv = V*V^T
@@ -59,7 +60,8 @@ module matrices
         end do
         end do
         ! Change of basis to Lagrange polynomial
-        Mass = matmul(matmul(transpose(VanderInv), tempMass), VanderInv)
+        Mass = tempMass
+        if(inodal) Mass = matmul(matmul(transpose(VanderInv), tempMass), VanderInv)
         ! Evaluate inverse Mass matrix
         tempMass = Mass
         MassInv = 0.0d0
@@ -90,7 +92,8 @@ module matrices
         end do
         end do
         !Stiff = matmul(matmul(VanderInv, tempStiff), transpose(VanderInv))
-        Stiff = matmul(matmul(transpose(VanderInv), tempStiff), VanderInv)
+        Stiff = tempStiff
+        if(inodal) Stiff = matmul(matmul(transpose(VanderInv), tempStiff), VanderInv)
     end subroutine buildStiffness
 
     subroutine buildDifferentiation
@@ -110,7 +113,8 @@ module matrices
         call poly_eval(polytype, ibasis, refSurf, polyValSurf) 
         basisSurf(ibasis+1,:) = polyValSurf
     end do
-    VanderSurf = matmul(transpose(VanderInv),basisSurf)
+    VanderSurf = basisSurf
+    if(inodal) VanderSurf = matmul(transpose(VanderInv),basisSurf)
     Lift = matmul(MassInv,VanderSurf)
     end subroutine buildLift
 

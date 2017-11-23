@@ -3,7 +3,7 @@ use prec
 use glob
 !use poly, only: V, Dr
 use matrices
-use grid, only: rx, normals, Fscale
+use grid, only: drdx, normals, Fscale
 implicit none
 
 real(dp), intent(in) :: u(nref,nele)
@@ -61,7 +61,7 @@ du(2,nele) = 0.0d0
 
 ! Evaluate RHS of semi-discrete PDE
 ! dudt = -wavespeed * Minv * S * u + Minv[ l(x) * du ]^xr_xl
-rhsu = -wavespeed * rx * matmul(Differentiation,u)
+rhsu = -wavespeed * drdx * matmul(Differentiation,u)
 rhsu = rhsu + matmul(Lift, Fscale*du)
 
 return
