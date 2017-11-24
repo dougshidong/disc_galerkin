@@ -20,6 +20,7 @@ select case(select_node)
         call JacobiGQ(xquad, wquad, quad_alpha, quad_beta, quad_npts-1)
     case default
         call JacobiGQ(xquad, wquad, quad_alpha, quad_beta, quad_npts-1)
+        !call legendreGLNodesWeights(quad_npts-1, xquad, wquad)
 end select
 xquad = 0.5d0*((refb-refa)*xquad+(refa+refb))
 end subroutine initialize_quad

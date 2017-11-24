@@ -90,7 +90,7 @@ def vonNeumann():
         real, imag = np.loadtxt(outf, unpack = True, dtype=np.float128,skiprows=0)
 
         plt.figure()
-        plt.title('order = %d, nele = %d'%(order, nele))
+        plt.title('order = %d'%(order))
         for irk in range(nrk):
             istr = irk*nref*nk
             iend = (irk+1)*nref*nk

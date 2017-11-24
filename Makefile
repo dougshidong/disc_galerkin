@@ -1,8 +1,8 @@
 MF=     Makefile
 
 FC=     gfortran
-FFLAGS= -O3
-FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow# -finit-real=nan
+#FFLAGS= -O3
+FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
 
 
 LFLAGS= $(FFLAGS)
@@ -15,6 +15,7 @@ SRC= \
 		glob.f90    \
 		quadrature.f90	\
 		bspline.f90	\
+		nurbs.f90	\
 		jacobi.f90	\
 		monomial.f90	\
         bezier.f90      \

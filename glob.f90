@@ -5,8 +5,8 @@ implicit none
 integer :: order
 integer :: nele, nvertex, nref, nface, nfpoint
 real(dp), parameter :: PI=4.D0*DATAN(1.D0)
-!logical :: inodal = .true.
-logical :: inodal = (.not. .true.)
+logical :: inodal = .true.
+!logical :: inodal = (.not. .true.)
 integer :: iequation = 1
 ! 0 = sine
 ! 1 = Bump
@@ -17,7 +17,7 @@ integer :: icase = 0
 ! 1 = Evaluate eig[semi-discrete]
 ! 2 = Evaluate eig[semi-discrete] for all wavenumbers
 ! 3 = Find maximum dt for various RK
-integer :: istab = 1
+integer :: istab = -1
 ! 1 = Bezier
 ! 2 = BSpline
 ! 3 = NURBS

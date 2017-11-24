@@ -10,20 +10,39 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
+from scipy.interpolate import lagrange
 
 np.set_printoptions(precision=3)
 np.set_printoptions(linewidth=132)
+
+colors =['b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' 
+        ,'b', 'g', 'r', 'c', 'm', 'y', 'k' ]
+markers=['o','v','^','<','>','1','2','3','4','8','s','p','P','*','h','H','+','x','X','D','d','|','_']
 
 pdfName = 'Figures_2.pdf'
 pp=PdfPages(pdfName)
 testcase = 0
 finalTime = 0.5
-if(testcase == 0): nn = 3
-if(testcase == 0): orders = np.arange(1,9,dtype=np.int32)
-if(testcase == 1): nn = 7
-if(testcase == 1): orders = np.arange(1,9,dtype=np.int32)
+nn = 3
+orders = np.arange(2,5,dtype=np.int32)
+if(testcase == 0): nn = 4
+if(testcase == 0): orders = np.arange(1,7,dtype=np.int32)
+if(testcase == 1): nn = 6
+if(testcase == 1): orders = np.arange(2,15,dtype=np.int32)
 elements = 2*np.logspace(0,nn,num=nn+1,base=2,dtype=np.int32)
 #elements = 10*np.linspace(1,nn,num=nn)
+#elements = 32*np.logspace(0,1,1,base=2,dtype=np.int32)
 if(len(sys.argv) == 1):
     inf = 'input.in'
     outf = 'output.dat'
@@ -52,17 +71,32 @@ if(len(sys.argv) == 1):
 
             os.system('./advection')
 
-            x, u = np.loadtxt(outf, unpack = True, dtype=np.float128,skiprows=0)
-            ref = x[2*n:2*n+npts]
-            x = x[0:n]
-            u0 = u[0:n]
-            uf = u[n:2*n]
-            weights = u[2*n:2*n+npts]
-            if j==0:
-                print('integral')
-                print(ref)
-                print(weights)
-                print(np.dot(ref**2.0,weights))
+            xread, uread = np.loadtxt(outf, unpack = True, dtype=np.float128,skiprows=0)
+            idata = 0
+            x = xread[0:n]
+            u0 = uread[0:n]
+            idata += n
+            uf = uread[idata:idata+n]
+            idata += n
+#           basis_fun = np.zeros([order+1,n])
+#           for ix in range(order+1):
+#               basis_fun[ix,:] = uread[idata:idata+n]
+#               idata += n
+#           plt.figure()
+#           for ix in range(order+1):
+#               plt.title('nbasis = %d, order = %d'%(order+1, max(order+1-14,2)))
+#               #plt.title('nbasis = %d, order = %d'%(order+1, order))
+#               plt.plot(x,basis_fun[ix,:],colors[ix], ms = 8, mec = colors[ix], marker=markers[ix], mfc='None',label=('ibasis=%d'%ix))
+#               plt.legend()
+#           pp.savefig(bbx_inches='tight')
+
+            ref = xread[idata:idata+npts]
+            weights = uread[idata:idata+npts]
+            # Check quadrature
+#           if j==0:
+#               print('integral x**2', np.dot(ref**2.0,weights), '=2/3')
+#               print(ref)
+#               print(weights)
 
             xe = np.linspace(x[0],x[-1],300)
             ue = 0.0*xe
@@ -70,24 +104,36 @@ if(len(sys.argv) == 1):
                 if -1.0+finalTime < xx < 1.0+finalTime:
                     ue[ix] = np.exp(-1.0/(1.0-(xx-finalTime)**2))
             if(testcase == 0): ue = np.sin(xe-finalTime)
+            if(testcase == 3): ue = np.cos(xe)
 
             plt.figure()
-            plt.plot(x,u0,'-bo',mec='blue',mfc='None')
-            plt.plot(x,uf,'-ro',mec='red',mfc='None')
+            plt.title('Order = %d, Elements = %d'%(order, nele))
+#           plt.plot(x,u0,'-bo',mec='blue',mfc='None')
+#           for ix in range(nele):
+#               plt.plot(x[ix*npts:(ix+1)*npts],u0[ix*npts:(ix+1)*npts],colors[ix],marker='o',mec=colors[ix],mfc='None')
+            for ix in range(nele):
+                poly = lagrange(x[ix*npts:(ix+1)*npts],uf[ix*npts:(ix+1)*npts])
+                xr = np.linspace(x[ix*npts],x[(ix+1)*npts-1],100,endpoint=True)
+                ur = np.polyval(poly,xr)
+                plt.plot(xr,ur,colors[ix],marker=None)#,mec=colors[ix],mfc='None')
+                plt.plot(x[ix*npts:(ix+1)*npts],uf[ix*npts:(ix+1)*npts],'o',mec=colors[ix],mfc='None')
+                #plt.plot(x[ix*npts:(ix+1)*npts],uf[ix*npts:(ix+1)*npts],colors[ix],marker='o',mec=colors[ix],mfc='None')
+            #plt.plot(x,uf,'-r^',mec='red',mfc='None')
             plt.plot(xe,ue,'-k')
             pp.savefig(bbx_inches='tight')
+            plt.close()
 
             ue = 0.0*x
             for ix, xx in enumerate(x):
                 if -1.0+finalTime < xx < 1.0+finalTime:
                     ue[ix] = np.exp(-1.0/(1.0-(xx-finalTime)**2))
             if(testcase == 0): ue = np.sin(x-finalTime)
+            if(testcase == 3): ue = np.cos(x)
 
-            error[i,j] = np.linalg.norm((ue[:] - uf[:])) / np.linalg.norm(ue[:])
-            #error[i,j] = np.linalg.norm((ue[:] - uf[:]),2)
+            error[i,j] = np.linalg.norm((ue[:] - uf[:])) / np.linalg.norm(ue[:]+1e-14)
             uer = np.reshape(ue, (nele,npts))
             ufr = np.reshape(uf, (nele,npts))
-            
+
             num = 0
             den = 0
             for iele in range(int(nele)):
@@ -96,21 +142,18 @@ if(len(sys.argv) == 1):
                     #num += weights[iref]*abs(err)**2
                     num += weights[iref]*abs(err)**2
                     den += weights[iref]*abs(uer[iele,iref])**2
-            error[i,j] = np.sqrt(abs(num / den))
+            error[i,j] = np.sqrt(abs(num / (den+1e-15)))
             err = (ue[:] - uf[:])
-            error1[i,j] = np.linalg.norm(err,1) / np.linalg.norm(ue[:],1)
-            error2[i,j] = np.linalg.norm(err,2) / np.linalg.norm(ue[:])
-            #error1[i,j] = np.linalg.norm(err/ue[:],1) / nele
-            #error2[i,j] = np.linalg.norm(err/ue[:],2) / nele
+            error1[i,j] = np.linalg.norm(err,1) / (np.linalg.norm(ue[:],1)+1e-14)
+            error2[i,j] = np.linalg.norm(err,2) / (np.linalg.norm(ue[:])+1e-14)
 
             logh = np.log10(h)
-            loge = np.log10(abs(error[i,:]))
+            loge = np.log10(abs(error[i,:])+1e-14)
             slope = 0.0
             if j > 0:
                 slope, intercept, r_value, p_value, std_err = linregress(logh[j-1:j+1],loge[j-1:j+1])
             slopes[i,j] = slope
 
-            #print('order: %d \t nele: %d \t  quad error: %e \t l1e: %e \t  l2e: %e' % (order,nele,error[i,j], error1[i,j], error2[i,j]))
             print('order: %d \t nele: %d \t  quad error: %e \t slope: %e' % (order,nele,error[i,j], slope))
         print('**************')
 
@@ -125,30 +168,38 @@ pp.close()
 
 
 pdfName = 'Figures.pdf'
-ppp=PdfPages(pdfName)
-npts= -2
+pp=PdfPages(pdfName)
+slope_s= -2
+slope_e= None
 plt.figure()
 for i, order in enumerate(orders):
     #plt.loglog(h, error[i,:],'-o', label='p=%d'%order)
     logh = np.log10(h)
+    #logh = np.log10(elements)
     loge2 = np.log10(error2[i,:])
     loge1 = np.log10(error1[i,:])
     logeq = np.log10(error[i,:])
-    slope1, intercept, r_value, p_value, std_err = linregress(logh[npts:],loge1[npts:])
-    slope2, intercept, r_value, p_value, std_err = linregress(logh[npts:],loge2[npts:])
-    slopeq, intercept, r_value, p_value, std_err = linregress(logh[npts:],logeq[npts:])
+    slope1, intercept, r_value, p_value, std_err = linregress(logh[slope_s:slope_e],loge1[slope_s:slope_e])
+    slope2, intercept, r_value, p_value, std_err = linregress(logh[slope_s:slope_e],loge2[slope_s:slope_e])
+    slopeq, intercept, r_value, p_value, std_err = linregress(logh[slope_s:slope_e],logeq[slope_s:slope_e])
 
     loge = np.log10(error[i,:])
-    slope, intercept, r_value, p_value, std_err = linregress(logh[npts:],loge[npts:])
+    #print(loge)
+    #print(logh)
+    slope, intercept, r_value, p_value, std_err = linregress(logh[slope_s:slope_e],loge[slope_s:slope_e])
     plt.plot(logh, loge, '-o', label='p=%d,s=%3.2f'%(order,slope))
     xfid = np.linspace(np.log10(h[0]),np.log10(h[-1]))
+    #xfid = np.linspace(np.log10(elements[0]),np.log10(elements[-1]))
     plt.plot(xfid, xfid*slope+intercept,'-k')
     print('order=%d, sq=%f, s1=%f, s2=%f' %(order,slopeq,slope1,slope2))
-plt.xlabel('log(h)')
-plt.ylabel('log(err)')
+plt.xlabel(r'$\log (h_k)$')
+#plt.xlabel(r'log(number of elements)')
+plt.ylabel(r'$\log(\|\| \mathbf{u}^* - \mathbf{u}_h \|\|_2)$')
+#plt.ylabel(r'log(error)')
+plt.title('Spectral Convergence of DG')
 plt.legend(loc='best',fontsize='small')
-ppp.savefig(bbx_inches='tight')
-ppp.close()
+pp.savefig(bbx_inches='tight')
+pp.close()
 
 def tab(a):
     """Returns a LaTeX bmatrix
