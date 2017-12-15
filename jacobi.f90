@@ -52,7 +52,7 @@ subroutine gradJacobiP(r, alpha, beta, order, Pd)
 implicit none
 integer, intent(in) :: order
 real(dp), intent(in) :: r(:), alpha, beta
-real(dp), intent(out) :: Pd(size(r))
+real(dp), intent(out) :: Pd(:)!size(r))
 real(dp) :: P(size(r))
 
 if(order.eq.0) then

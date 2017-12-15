@@ -5,58 +5,122 @@ module matrices
     ! Mass = inv(V*V^T) = inv(V^T)*inv(V)
     ! MassInv = V*V^T
     real(dp), allocatable :: Mass(:,:), MassInv(:,:)
-    real(dp), allocatable :: Stiff(:,:)
+    real(dp), allocatable :: Sr(:,:), Ss(:,:)
     ! Lift matrix contains the Lagrange function evaluated at the surface points
-    real(dp), allocatable :: Lift(:,:)
+    real(dp), allocatable :: Lift(:,:,:)
     ! Vandermonde matrix comes from the change of basis
     ! V^T * lagrange = P
     ! u_nodal = V * umodal
     real(dp), allocatable :: Vander(:,:), VanderInv(:,:)
-    real(dp), allocatable :: VanderSurf(:,:)
-    ! Differentiation matrix defines u'=Dr*u. Dr = Minv*S
-    real(dp), allocatable :: Differentiation(:,:)
+    real(dp), allocatable :: VanderSurf(:,:,:)
+    real(dp), allocatable :: VanderGrad(:,:,:)
+    ! Dr = Minv*Sr
+    real(dp), allocatable :: Dr(:,:), Ds(:,:)
 
     contains
     
-    subroutine buildVandermonde(ref)
+    subroutine buildVandermondeGrad
         use glob
+        use ref_ele_mod
         implicit none
-        real(dp), intent(in) :: ref(nref)
-        real(dp) :: tempV(nref, nref)
-        real(dp) :: polyVal(nref)
-        integer :: i, j
-        integer :: info, ipiv(nref)
+        real(dp) :: polyGrad(nbasis), polyVal(nbasis)
+        integer :: kdir, ibasis, jbasis
 
         ! Evaluate Vandermonde
-        do j = 0, order
-            call poly_eval(polytype, j, ref, polyVal) 
-            Vander(1:nref,j+1) = polyVal
+        do kdir = 1, ndim
+        do ibasis = 1, nbasis
+            call polyGrad_eval(polytype, ibasis, order, kdir, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, polyGrad(:)) 
+            VanderGrad(1:nbasis,ibasis,kdir) = polyGrad
+        end do
+        end do
+        return
+    end subroutine buildVandermondeGrad
+
+    subroutine VandermondeGrad(VG, refnodes, nnode, porder)
+        use glob
+        implicit none
+        integer :: nnode, porder
+        real(dp) :: VG(nnode, nbasis, ndim), refnodes(nnode,ndim)
+        real(dp) :: polyGrad(nnode)
+        integer :: kdir, ibasis
+
+        ! Evaluate Vandermonde Grad
+        do kdir = 1, ndim
+        do ibasis = 1, nbasis
+            call polyGrad_eval(polytype, ibasis, porder, kdir, ndim, nnode, refnodes, polyGrad) 
+            VG(1:nnode, ibasis, kdir) = polyGrad
+        end do
+        end do
+        return
+    end subroutine VandermondeGrad
+    subroutine Vandermonde(V, refnodes, nnode, porder)
+        use glob
+        implicit none
+        integer :: nnode, porder
+        real(dp) :: V(nbasis, nnode), refnodes(nnode,ndim)
+        real(dp) :: polyVal(nnode)
+        integer :: ibasis
+
+        ! Evaluate Vandermonde
+        do ibasis = 1, nbasis
+            call poly_eval(polytype, ibasis, porder, ndim, nnode, refnodes, polyVal)
+            V(1:nnode,ibasis) = polyVal
+        end do
+        return
+    end subroutine Vandermonde
+
+    subroutine buildVandermonde
+        use glob
+        use ref_ele_mod
+        implicit none
+        real(dp) :: tempV(nbasis, nbasis)
+        real(dp) :: polyVal(nbasis)
+        integer :: info, ipiv(nbasis)
+        integer :: ibasis
+
+        ! Evaluate Vandermonde
+        do ibasis = 1, nbasis
+            call poly_eval(polytype, ibasis, order, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, polyVal) 
+            Vander(1:nbasis,ibasis) = polyVal
         end do
         ! Evaluate inverse Vandermonde
-        tempV = Vander
-        VanderInv = 0.0d0
-        do i = 1, nref
-            VanderInv(i,i) = 1.0d0
-        end do
-        call dgesv(nref, nref, tempV, nref, ipiv, VanderInv, nref, info )
+        call invertMatrix(Vander, VanderInv, nbasis, info)
+        if(info.ne.0) print *, 'Failed to evaluate inverse Vandermonde'
         return
     end subroutine buildVandermonde
+
+    subroutine invertMatrix(A, Ainv, n, info)
+        implicit none
+        integer :: i, n, info, ipiv(n)
+        real(dp), dimension(n,n) :: A, Ainv, tempA
+
+        tempA = A
+        Ainv = 0.0d0
+        do i = 1, n
+            Ainv(i, i) = 1.0d0
+        end do
+        call dgesv(n, n, tempA, n, ipiv, Ainv, n, info )
+        return
+    end subroutine
 
     subroutine buildMass
         use glob
         use quadrature
+        use cubature2D
+        use ref_ele_mod
         implicit none
-        real(dp) :: ipolyVal(quad_npts), jpolyVal(quad_npts)
-        real(dp) :: tempMass(nref,nref)
-        integer :: iref, jref
-        integer :: info, ipiv(nref)
+        real(dp) :: ipolyVal(nbasis), jpolyVal(nbasis)
+        real(dp) :: tempMass(nbasis,nbasis)
+        integer :: ibasis, jbasis
+        integer :: info, ipiv(nbasis)
 
         ! Evaluate Mass matrix
-        do iref = 1, nref
-        call poly_eval(polytype, iref-1, xquad, ipolyVal) 
-        do jref = 1, nref
-            call poly_eval(polytype, jref-1, xquad, jpolyVal) 
-            tempMass(iref,jref) = integrate(ipolyVal*jpolyVal)
+        do ibasis = 1, nbasis
+        call poly_eval(polytype, ibasis, order, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, ipolyVal) 
+        do jbasis = 1, nbasis
+            call poly_eval(polytype, jbasis, order, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, jpolyVal) 
+            if(ndim.eq.1) tempMass(ibasis,jbasis) = integrate(ipolyVal*jpolyVal)
+            if(ndim.eq.2) tempMass(ibasis,jbasis) = integrate2D(ipolyVal*jpolyVal)
         end do
         end do
         ! Change of basis to Lagrange polynomial
@@ -65,10 +129,10 @@ module matrices
         ! Evaluate inverse Mass matrix
         tempMass = Mass
         MassInv = 0.0d0
-        do iref = 1, nref
-            MassInv(iref,iref) = 1.0d0
+        do ibasis = 1, nbasis
+            MassInv(ibasis,ibasis) = 1.0d0
         end do
-        call dgesv(nref, nref, tempMass, nref, ipiv, MassInv, nref, info )
+        call dgesv(nbasis, nbasis, tempMass, nbasis, ipiv, MassInv, nbasis, info )
         if(info.ne.0) print *, 'Failed to evaluate inverse Mass'
         return
     end subroutine buildMass
@@ -76,57 +140,88 @@ module matrices
     subroutine buildStiffness
         use glob
         use quadrature
+        use cubature2D
+        use ref_ele_mod
         implicit none
-        real(dp) :: polyGrad(quad_npts), polyVal(quad_npts)
-        real(dp) :: tempStiff(nref,nref)
-        integer :: iref, jref
+        real(dp) :: polyGrad(nbasis,ndim), polyVal(nbasis)
+        real(dp) :: tempStiff(nbasis,nbasis, ndim)
+        integer :: idir, ibasis, jbasis
 
-        do iref = 1, nref
-        call polyGrad_eval(polytype, iref-1, xquad, polyGrad) 
-        do jref = 1, nref
-            call poly_eval(polytype, jref-1, xquad, polyVal) 
-            ! Weak form dl*l
-            !tempStiff(iref,jref) = integrate(polyGrad*polyVal)
-            ! Strong form l*dl
-            tempStiff(jref,iref) = integrate(polyGrad*polyVal)
+        do idir = 1, ndim
+            do ibasis = 1, nbasis
+                call polyGrad_eval(polytype, ibasis, order, idir, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, polyGrad(:, idir)) 
+                do jbasis = 1, nbasis
+                    call poly_eval(polytype, jbasis, order, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, polyVal) 
+                    ! Strong form l*dl
+                    if(ndim.eq.1) tempStiff(jbasis,ibasis,idir) = integrate(polyGrad(:, idir)*polyVal)
+                    if(ndim.eq.2) tempStiff(jbasis,ibasis,idir) = integrate2D(polyGrad(:, idir)*polyVal)
+                end do
+            end do
         end do
-        end do
-        !Stiff = matmul(matmul(VanderInv, tempStiff), transpose(VanderInv))
-        Stiff = tempStiff
-        if(inodal) Stiff = matmul(matmul(transpose(VanderInv), tempStiff), VanderInv)
+        if(.not.inodal) Sr = tempStiff(:,:,1)
+        if(inodal) Sr = matmul(matmul(transpose(VanderInv), tempStiff(:,:,1)), VanderInv)
+        if(ndim.ge.2) then
+            if(.not.inodal) Ss = tempStiff(:,:,2)
+            if(inodal) Ss = matmul(matmul(transpose(VanderInv), tempStiff(:,:,2)), VanderInv)
+        end if
     end subroutine buildStiffness
 
     subroutine buildDifferentiation
-    Differentiation = matmul(MassInv,Stiff)
+        Dr = matmul(MassInv,Sr)
+        if(ndim.ge.2) Ds = matmul(MassInv,Ss)
+!       Dr = matmul(Mass,Sr)
+!       if(ndim.ge.2) Ds = matmul(Mass,Ss)
     end subroutine buildDifferentiation
 
     subroutine buildLift
-    use glob, only: refa, refb
-    implicit none
-    integer :: ibasis
-    real(dp) :: refSurf(2)
-    real(dp) :: polyValSurf(2)
-    real(dp) :: basisSurf(nref,2)
-    refSurf(1) = refa
-    refSurf(2) = refb
-    do ibasis = 0, order
-        call poly_eval(polytype, ibasis, refSurf, polyValSurf) 
-        basisSurf(ibasis+1,:) = polyValSurf
-    end do
-    VanderSurf = basisSurf
-    if(inodal) VanderSurf = matmul(transpose(VanderInv),basisSurf)
-    Lift = matmul(MassInv,VanderSurf)
+        use ref_ele_mod
+        implicit none
+        integer :: ibasis, iface
+        real(dp), allocatable :: polyValSurf(:)
+        real(dp), allocatable :: basisSurf(:, :, :)
+        allocate(polyValSurf(ref_ele(ndim)%p%nnode_face))
+        allocate(basisSurf(nbasis, ref_ele(ndim)%p%nnode_face, ref_ele(ndim)%p%nface))
+        do ibasis = 1, nbasis
+        do iface = 1, ref_ele(ndim)%p%nface
+            call poly_eval(polytype, ibasis, order, ndim, ref_ele(ndim)%p%nnode_face, ref_ele(ndim)%p%nodes_face(:,:,iface), polyValSurf) 
+            basisSurf(ibasis,:,iface) = polyValSurf
+        end do
+        end do
+        VanderSurf = basisSurf
+        do iface = 1, ref_ele(ndim)%p%nface
+            if(inodal) VanderSurf(:, :, iface) = matmul(transpose(VanderInv), basisSurf(:, :, iface))
+            VanderSurf(:, :, iface) = matmul(transpose(VanderInv), basisSurf(:, :, iface))
+            do ibasis = 1, nbasis
+                if(ndim.eq.1) Lift(ibasis, : , iface) = VanderSurf(ibasis, :, iface)
+                if(ndim.eq.2) Lift(ibasis, : , iface) = VanderSurf(ibasis, :, iface) * quadW
+            end do
+            !Lift(:, : , iface) = matmul(MassInv, VanderSurf(:, :, iface))
+            Lift(:, : , iface) = matmul(MassInv, Lift(:, : , iface))
+        end do
     end subroutine buildLift
 
     subroutine allocate_matrices
         use glob
+        use ref_ele_mod
         implicit none
-        allocate(Lift(nref, nface*nfpoint))
-        allocate(Vander(nref,nref), VanderInv(nref,nref))
-        allocate(VanderSurf(nref,nface*nfpoint))
-        allocate(Mass(nref,nref), MassInv(nref,nref))
-        allocate(Stiff(nref,nref))
-        allocate(Differentiation(nref,nref))
+!       integer :: nface, nfpoint
+!       ! Assume only 1 type of element
+!       if(ndim.eq.1) then
+!           nface = 2
+!           nfpoint = 1
+!       else if(ndim.eq.2) then !quad
+!           nface = 4
+!           nfpoint = quad_npts
+!       end if
+        allocate(Lift(nbasis, ref_ele(ndim)%p%nnode_face, ref_ele(ndim)%p%nface))
+        allocate(VanderSurf(nbasis, ref_ele(ndim)%p%nnode_face, ref_ele(ndim)%p%nface))
+
+        allocate(Vander(nbasis,nbasis), VanderInv(nbasis,nbasis))
+        allocate(VanderGrad(nbasis, nbasis, ndim))
+
+        allocate(Mass(nbasis,nbasis), MassInv(nbasis,nbasis))
+        allocate(Sr(nbasis,nbasis), Dr(nbasis,nbasis))
+        if(ndim.ge.2) allocate(Ss(nbasis,nbasis), Ds(nbasis,nbasis))
         return
     end subroutine allocate_matrices
 
@@ -135,8 +230,8 @@ module matrices
         deallocate(Vander, VanderInv)
         deallocate(VanderSurf)
         deallocate(Mass, MassInv)
-        deallocate(Stiff)
-        deallocate(Differentiation)
+        deallocate(Sr, Dr)
+        if(ndim.ge.2) deallocate(Ss, Ds)
         return
     end subroutine deallocate_matrices
 

@@ -2,8 +2,13 @@ module glob
 use prec
 implicit none
 
+integer :: nbasis
+integer :: nele, nvertex
+
 integer :: order
-integer :: nele, nvertex, nref, nface, nfpoint
+integer, parameter :: ndim = 1
+integer, parameter :: nstate = 1
+
 real(dp), parameter :: PI=4.D0*DATAN(1.D0)
 logical :: inodal = .true.
 !logical :: inodal = (.not. .true.)
@@ -30,6 +35,8 @@ integer :: polytype = 9
 ! 3 = Uniform distribution
 integer :: select_node = 2
 ! Reference element Coordinates
+!real(dp), dimension(ndim) :: refa = -1.0d0
+!real(dp), dimension(ndim) :: refb = 1.0d0
 real(dp) :: refa = -1.0d0
 real(dp) :: refb = 1.0d0
 
@@ -38,6 +45,11 @@ contains
 subroutine printMatrix(A)
 real(dp) :: A(:,:)
 integer :: i, j
+do, i=1,size(A,1)
+do, j=1,size(A,2)
+    if(abs(A(i,j)).le.1e-13) A(i,j) = 0.0d0
+end do
+end do
 do, i=1,size(A,1)
     write(*,"(100E15.5)") ( A(i,j), j=1,size(A,2) )
 enddo

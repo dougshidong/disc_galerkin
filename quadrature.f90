@@ -4,34 +4,41 @@ use glob, only: refa, refb
 
 integer :: iquad, quad_npts
 real(dp) :: quad_alpha = 0.0d0, quad_beta = 0.0d0
-real(dp), allocatable :: xquad(:), wquad(:)
+real(dp), allocatable :: quadR(:), quadW(:)
+
+logical :: quad_init = .false.
 
 contains
 
 subroutine initialize_quad
-use glob, only: nref,select_node
-quad_npts = nref
-quad_npts = nref
-allocate(xquad(quad_npts), wquad(quad_npts))
+use glob, only: order,nbasis,select_node
+
+if(quad_init) return; quad_init = .true.
+
+quad_npts = order+1
+allocate(quadR(quad_npts), quadW(quad_npts))
 select case(select_node)
     case(11) ! Legendre-Gauss-Lobatto
-        call legendreGLNodesWeights(quad_npts-1, xquad, wquad)
+        call legendreGLNodesWeights(quad_npts-1, quadR, quadW)
     case(21) ! Gauss-Legendre
-        call JacobiGQ(xquad, wquad, quad_alpha, quad_beta, quad_npts-1)
+        call JacobiGQ(quadR, quadW, quad_alpha, quad_beta, quad_npts-1)
     case default
-        call JacobiGQ(xquad, wquad, quad_alpha, quad_beta, quad_npts-1)
-        !call legendreGLNodesWeights(quad_npts-1, xquad, wquad)
+        call JacobiGQ(quadR, quadW, quad_alpha, quad_beta, quad_npts-1)
+        !call legendreGLNodesWeights(quad_npts-1, quadR, quadW)
 end select
-xquad = 0.5d0*((refb-refa)*xquad+(refa+refb))
+quadR = 0.5d0*((refb-refa)*quadR+(refa+refb))
 end subroutine initialize_quad
+
 subroutine finalize_quad
-deallocate(xquad, wquad)
+quad_init = .false.
+quad_npts = 0
+deallocate(quadR, quadW)
 end subroutine finalize_quad
 
 real(dp) function integrate(f)
 implicit none
 real(dp) :: f(quad_npts)
-integrate = 0.5d0*(refb-refa)*dot_product(wquad, f)
+integrate = 0.5d0*(refb-refa)*dot_product(quadW, f)
 end function integrate
 
 subroutine JacobiGQ(ref, weights, alpha, beta, order)

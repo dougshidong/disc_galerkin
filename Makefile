@@ -1,8 +1,11 @@
 MF=     Makefile
 
 FC=     gfortran
+FV=     -std=f2008
 #FFLAGS= -O3
-FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+#FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+FFLAGS= -g -Wall -Wextra -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+
 
 
 LFLAGS= $(FFLAGS)
@@ -11,23 +14,28 @@ LIBS= -L/usr/lib -llapack -lblas
 EXE=    advection
 
 SRC= \
+		gmsh_io.f90	\
 		prec.f90    \
 		glob.f90    \
-		quadrature.f90	\
-		bspline.f90	\
-		nurbs.f90	\
-		jacobi.f90	\
-		monomial.f90	\
+    	legendreGLNodesWeights.f90	\
+    	legendreNM.f90	\
+    	quadrature.f90	\
+		cubature2D.f90	\
+		ref_ele_mod.f90\
+    	face_mod.f90\
+    	bspline.f90	\
+    	nurbs.f90	\
+    	jacobi.f90	\
+    	monomial.f90	\
         bezier.f90      \
-		poly.f90	\
-		matrices.f90	\
-		grid.f90	\
-		legendreGLNodesWeights.f90	\
-		legendreNM.f90	\
-		lift1D.f90	\
-		advecRHS1D.f90	\
-		stability.f90	\
+    	poly.f90	\
+    	matrices.f90	\
+    	element_mod.f90\
+    	grid.f90	\
+    	advecRHS1D.f90	\
 		main.f90
+####	lift1D.f90	\
+####	stability.f90	\
 
 #
 # No need to edit below this line
@@ -39,12 +47,12 @@ SRC= \
 OBJ=    $(SRC:.f90=.o)
 
 .f90.o:
-		$(FC) $(FFLAGS) -c $< $(LIBS)
+		$(FC) $(FV) $(FFLAGS) -c $< $(LIBS)
 
-all:    $(EXE)
+all:    clean $(EXE)
 
 $(EXE): $(OBJ)
-		$(FC) $(LFLAGS) -o $@ $(OBJ) $(LIBS)
+		$(FC) $(FV) $(LFLAGS) -o $@ $(OBJ) $(LIBS)
 
 $(OBJ): $(MF)
 

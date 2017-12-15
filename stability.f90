@@ -12,23 +12,23 @@ subroutine stable_dt
 implicit none
 
 real(dp) :: dt, dx, wavenumber
-complex(dp) :: SD(nref,nref)
-complex(dp) :: SD_powers(nref,nref)
-complex(dp) :: D(nref,nref) ! Time integration and space discretization
-complex(dp) :: eig(nref), maxeig
+complex(dp) :: SD(Np,Np)
+complex(dp) :: SD_powers(Np,Np)
+complex(dp) :: D(Np,Np) ! Time integration and space discretization
+complex(dp) :: eig(Np), maxeig
 complex(dp), allocatable :: eigarr(:,:)
 integer :: i
-real(dp) :: fac, identity(nref,nref), gain(nref)
+real(dp) :: fac, identity(Np,Np), gain(Np)
 
 integer :: it, ik, nt, nk, nrk
 
 nk = 100
 nt = 60000
 
-allocate(eigarr(nk,nref))
+allocate(eigarr(nk,Np))
 
 identity = 0.0d0
-do i = 1, nref
+do i = 1, Np
     identity(i,i) = 1.0d0
 end do
 
@@ -56,10 +56,10 @@ do it = 1, nt
             D = D + dt**i / fac * SD_powers
         end if
 
-        call complex_eig(D,eig,nref)
+        call complex_eig(D,eig,Np)
         gain = real(eig)**2 + aimag(eig)**2
         if(maxval(gain) .ge. 1.0d0+1e-12) exit
-        call complex_eig(SD,eig,nref)
+        call complex_eig(SD,eig,Np)
         eigarr(ik,:) = eig
     end do
     if(it.eq.nt) then
@@ -69,7 +69,7 @@ do it = 1, nt
     if(ik.gt.nk) then
         !print*, dt
         do ik = 1, nk
-            do i = 1, nref
+            do i = 1, Np
                 print*, dt*real(eigarr(ik,i)), dt*aimag(eigarr(ik,i))
             end do
         end do
@@ -85,13 +85,13 @@ subroutine check_stability(wavenumber, eig)
 implicit none
 
 real(dp) :: wavenumber
-complex(dp) :: SD(nref,nref) ! Semi-discrete matrix [d/dt] [u] = [S] [u]
-complex(dp) :: eig(nref)
+complex(dp) :: SD(Np,Np) ! Semi-discrete matrix [d/dt] [u] = [S] [u]
+complex(dp) :: eig(Np)
 
 call build_semidiscrete(wavenumber,SD)
 if(istab.eq.1) call print_cmatrix(SD)
 
-call complex_eig(SD,eig,nref)
+call complex_eig(SD,eig,Np)
 call print_cvector(eig)
 
 end subroutine check_stability
@@ -100,10 +100,10 @@ subroutine build_semidiscrete(wavenumber, SD)
 implicit none
 
 real(dp) :: wavenumber
-real(dp) :: C_m(nref,nref)
-real(dp) :: C_0(nref,nref)
-complex(dp) :: SD(nref,nref) ! Semi-discrete matrix [d/dt] [u] = [S] [u]
-complex(dp) :: du(2,nref)
+real(dp) :: C_m(Np,Np)
+real(dp) :: C_0(Np,Np)
+complex(dp) :: SD(Np,Np) ! Semi-discrete matrix [d/dt] [u] = [S] [u]
+complex(dp) :: du(2,Np)
 complex(dp) :: im
 real(dp) :: h = 1.0d0 ! Cell length
 im = (0.0d0, 1.0d0)
