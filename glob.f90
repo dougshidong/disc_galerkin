@@ -6,19 +6,23 @@ integer :: nbasis
 integer :: nele, nvertex
 
 integer :: order
-integer, parameter :: ndim = 1
-integer, parameter :: nstate = 1
 
 real(dp), parameter :: PI=4.D0*DATAN(1.D0)
-logical :: inodal = .true.
+!logical :: inodal = .true.
 !logical :: inodal = (.not. .true.)
-integer :: iequation = 1
+logical :: inodal = 0==0
 ! 0 = sine
 ! 1 = Bump
 ! 2 = x/abs(x)
 ! 3 = Differentiation of sine
-! 4 = Plot B-Splines
-integer :: icase = 0
+! 4 = With source term = -sin(x)
+integer :: icase = 1
+integer :: iequation = 1
+integer :: swform = 0
+integer, parameter :: ndim = 1
+integer, parameter :: nstate = 1
+real(dp) :: finalTime = 0.1d0
+real(dp), dimension(2) :: wavespeed = (/ 1.0d0, 1.0d0 /)
 ! 1 = Evaluate eig[semi-discrete]
 ! 2 = Evaluate eig[semi-discrete] for all wavenumbers
 ! 3 = Find maximum dt for various RK
@@ -39,6 +43,12 @@ integer :: select_node = 2
 !real(dp), dimension(ndim) :: refb = 1.0d0
 real(dp) :: refa = -1.0d0
 real(dp) :: refb = 1.0d0
+!real(dp) :: refa = 0.0d0
+!real(dp) :: refb = 1.0d0
+
+! Flow Solver Settings
+integer :: tscheme = 1 ! Time-stepping scheme
+real(dp) :: fscheme = 0.0d0 ! Numerical flux scheme
 
 contains 
 

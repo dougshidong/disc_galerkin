@@ -65,6 +65,7 @@ subroutine initialize_reference_elements
     quad%vertices(:, 3) = (/ 1.0d0,  1.0d0/)
     quad%vertices(:, 4) = (/-1.0d0,  1.0d0/)
 
+
     quad%nnode_cub = cub2D_npts
     allocate(quad%nodes_cub(quad%nnode_cub, 2))
     quad%nodes_cub = cubRS
@@ -84,6 +85,24 @@ subroutine initialize_reference_elements
     i = 4                           
     quad%nodes_face(1:quad_npts, 1, i) = -1.0d0
     quad%nodes_face(1:quad_npts, 2, i) = quadR(size(quadR):1:-1)
+
+
+!   quad%vertices(:, 1) = (/ 0.0d0,  0.0d0/)
+!   quad%vertices(:, 2) = (/ 1.0d0,  0.0d0/)
+!   quad%vertices(:, 3) = (/ 1.0d0,  1.0d0/)
+!   quad%vertices(:, 4) = (/ 0.0d0,  1.0d0/)
+!   i = 1
+!   quad%nodes_face(1:quad_npts, 1, i) = quadR
+!   quad%nodes_face(1:quad_npts, 2, i) = 0.0d0
+!   i = 2                           
+!   quad%nodes_face(1:quad_npts, 1, i) = 1.0d0
+!   quad%nodes_face(1:quad_npts, 2, i) = quadR
+!   i = 3                           
+!   quad%nodes_face(1:quad_npts, 1, i) = quadR(size(quadR):1:-1)
+!   quad%nodes_face(1:quad_npts, 2, i) = 1.0d0
+!   i = 4                           
+!   quad%nodes_face(1:quad_npts, 1, i) = 0.0d0
+!   quad%nodes_face(1:quad_npts, 2, i) = quadR(size(quadR):1:-1)
 
 
     ! Triangle

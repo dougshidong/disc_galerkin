@@ -38,6 +38,7 @@ real(dp) function integrate2D(f)
 implicit none
 real(dp) :: f(cub2D_npts)
 integrate2D = dot_product(cubW, f)
+!integrate2D = dot_product(cubW, f) * (0.5d0*(refb-refa))**2
 end function integrate2D
 
 

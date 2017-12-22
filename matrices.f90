@@ -16,6 +16,9 @@ module matrices
     real(dp), allocatable :: VanderGrad(:,:,:)
     ! Dr = Minv*Sr
     real(dp), allocatable :: Dr(:,:), Ds(:,:)
+    real(dp), allocatable :: DrInv(:,:), DsInv(:,:)
+
+    real(dp), allocatable :: phiTw(:,:)
 
     contains
     
@@ -23,13 +26,13 @@ module matrices
         use glob
         use ref_ele_mod
         implicit none
-        real(dp) :: polyGrad(nbasis), polyVal(nbasis)
-        integer :: kdir, ibasis, jbasis
+        real(dp) :: polyGrad(nbasis)
+        integer :: kdir, ibasis
 
         ! Evaluate Vandermonde
         do kdir = 1, ndim
         do ibasis = 1, nbasis
-            call polyGrad_eval(polytype, ibasis, order, kdir, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, polyGrad(:)) 
+            call polyGrad_eval(polytype, ibasis, order, kdir, ndim, ref_ele(ndim)%p%nnode_cub, ref_ele(ndim)%p%nodes_cub, polyGrad) 
             VanderGrad(1:nbasis,ibasis,kdir) = polyGrad
         end do
         end do
@@ -73,9 +76,8 @@ module matrices
         use glob
         use ref_ele_mod
         implicit none
-        real(dp) :: tempV(nbasis, nbasis)
         real(dp) :: polyVal(nbasis)
-        integer :: info, ipiv(nbasis)
+        integer :: info
         integer :: ibasis
 
         ! Evaluate Vandermonde
@@ -112,7 +114,7 @@ module matrices
         real(dp) :: ipolyVal(nbasis), jpolyVal(nbasis)
         real(dp) :: tempMass(nbasis,nbasis)
         integer :: ibasis, jbasis
-        integer :: info, ipiv(nbasis)
+        integer :: info
 
         ! Evaluate Mass matrix
         do ibasis = 1, nbasis
@@ -122,17 +124,14 @@ module matrices
             if(ndim.eq.1) tempMass(ibasis,jbasis) = integrate(ipolyVal*jpolyVal)
             if(ndim.eq.2) tempMass(ibasis,jbasis) = integrate2D(ipolyVal*jpolyVal)
         end do
+        if(ndim.eq.1) phiTw(ibasis,:) = ipolyVal*quadW
         end do
         ! Change of basis to Lagrange polynomial
         Mass = tempMass
         if(inodal) Mass = matmul(matmul(transpose(VanderInv), tempMass), VanderInv)
+        if(ndim.eq.1) phiTw = matmul(transpose(VanderInv), phiTw)
         ! Evaluate inverse Mass matrix
-        tempMass = Mass
-        MassInv = 0.0d0
-        do ibasis = 1, nbasis
-            MassInv(ibasis,ibasis) = 1.0d0
-        end do
-        call dgesv(nbasis, nbasis, tempMass, nbasis, ipiv, MassInv, nbasis, info )
+        call invertMatrix(Mass, MassInv, nbasis, info)
         if(info.ne.0) print *, 'Failed to evaluate inverse Mass'
         return
     end subroutine buildMass
@@ -167,6 +166,7 @@ module matrices
     end subroutine buildStiffness
 
     subroutine buildDifferentiation
+        integer :: info
         Dr = matmul(MassInv,Sr)
         if(ndim.ge.2) Ds = matmul(MassInv,Ss)
 !       Dr = matmul(Mass,Sr)
@@ -189,14 +189,14 @@ module matrices
         end do
         VanderSurf = basisSurf
         do iface = 1, ref_ele(ndim)%p%nface
-            if(inodal) VanderSurf(:, :, iface) = matmul(transpose(VanderInv), basisSurf(:, :, iface))
+            !if(inodal) VanderSurf(:, :, iface) = matmul(transpose(VanderInv), basisSurf(:, :, iface))
             VanderSurf(:, :, iface) = matmul(transpose(VanderInv), basisSurf(:, :, iface))
             do ibasis = 1, nbasis
                 if(ndim.eq.1) Lift(ibasis, : , iface) = VanderSurf(ibasis, :, iface)
                 if(ndim.eq.2) Lift(ibasis, : , iface) = VanderSurf(ibasis, :, iface) * quadW
             end do
             !Lift(:, : , iface) = matmul(MassInv, VanderSurf(:, :, iface))
-            Lift(:, : , iface) = matmul(MassInv, Lift(:, : , iface))
+            !if(swform.eq.0) Lift(:, : , iface) = matmul(MassInv, Lift(:, : , iface))
         end do
     end subroutine buildLift
 
@@ -216,12 +216,14 @@ module matrices
         allocate(Lift(nbasis, ref_ele(ndim)%p%nnode_face, ref_ele(ndim)%p%nface))
         allocate(VanderSurf(nbasis, ref_ele(ndim)%p%nnode_face, ref_ele(ndim)%p%nface))
 
+        allocate(phiTw(nbasis, nbasis))
+
         allocate(Vander(nbasis,nbasis), VanderInv(nbasis,nbasis))
         allocate(VanderGrad(nbasis, nbasis, ndim))
 
         allocate(Mass(nbasis,nbasis), MassInv(nbasis,nbasis))
-        allocate(Sr(nbasis,nbasis), Dr(nbasis,nbasis))
-        if(ndim.ge.2) allocate(Ss(nbasis,nbasis), Ds(nbasis,nbasis))
+        allocate(Sr(nbasis,nbasis), Dr(nbasis,nbasis), DrInv(nbasis,nbasis))
+        if(ndim.ge.2) allocate(Ss(nbasis,nbasis), Ds(nbasis,nbasis), DsInv(nbasis,nbasis))
         return
     end subroutine allocate_matrices
 

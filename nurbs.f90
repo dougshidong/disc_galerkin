@@ -17,7 +17,6 @@ contains
 
 subroutine nurbs_init
 implicit none
-integer :: i
 !real(dp) :: dk
 
 if(ns_init) return

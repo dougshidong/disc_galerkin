@@ -11,20 +11,18 @@ module grid
     integer :: nface_global, nvertex_global
     integer :: nivertex, njvertex
     integer, allocatable :: EtoV(:,:)
-    real(dp), allocatable :: Fscale(:,:)
-!   real(dp), allocatable :: normals(:,:)
-!   integer, allocatable :: GlobalFacetoElement(:,:) ! Element 1
     real(dp), allocatable :: global_vertices(:,:)
     type(face), allocatable :: global_faces(:)
     type(element), allocatable :: elements(:)
+
+    real(dp) :: xmin, xmax, Lx
+    real(dp) :: ymin, ymax, Ly
 
     contains
     subroutine finalize_grid
         deallocate(EtoV)
         deallocate(global_faces)
         deallocate(global_vertices)
-    !   deallocate(normals)
-        deallocate(Fscale)
 
         ! Allocatable components are deallocated automatically, but not pointers
         ! Deallocating entire grid will deallocate all its components
@@ -44,8 +42,6 @@ module grid
         integer :: iface_element1, iface_element2, iface_global
         integer :: ivertex
     !   real(dp) :: ref(ndim, nbasis)
-        real(dp) :: xmin, xmax, Lx
-        real(dp) :: ymin, ymax, Ly
 
     !   type(ref) :: ref
         integer :: vertices1(ndim), vertices2(ndim)
@@ -62,15 +58,8 @@ module grid
             nvertex_element = nface_element
         end if
 
-        select case(icase)
-            case(0)
-                if(ndim.eq.1) njvertex = 1
-                nvertex_global = nivertex*njvertex
-                xmin = -2.0d0*PI; xmax = 2.0d0*PI;
-                ymin = -2.0d0*PI; ymax = 2.0d0*PI;
-            case default
-                print *, 'Invalid case'
-        end select
+        if(ndim.eq.1) njvertex = 1
+        nvertex_global = nivertex*njvertex
 
         if(ndim.eq.1) nele = (nivertex-1)
         if(ndim.eq.2) nele = (njvertex-1)*(nivertex-1)
@@ -79,6 +68,31 @@ module grid
     !   allocate(normals(npts_face,nface_element,nele))
     !   allocate(Fscale(npts_face,nface_element,nele))
 
+        select case(icase)
+            case(-1)
+                xmin = -1.0d0; xmax = 1.0d0;
+                !print *, 'Sine wave case'
+            case(0)
+                xmin = -1.0d0*PI; xmax = 1.0d0*PI;
+                ymin = -1.0d0*PI; ymax = 1.0d0*PI;
+                !print *, 'Sine wave case'
+            case(1)
+                xmin = -3.0d0; xmax = 3.0d0;
+                ymin = -3.0d0; ymax = 3.0d0;
+                !print *, 'Bump wave case'
+            case(3)
+                xmin = -1.0d0; xmax = 1.0d0;
+                ymin = -1.0d0; ymax = 1.0d0;
+                !print *, 'Sine differentiation case'
+            case(4)
+                xmin = -1.0d0*PI; xmax = 1.0d0*PI;
+                ymin = -1.0d0*PI; ymax = 1.0d0*PI;
+                !print *, 'Source term sine case'
+            case default
+                xmin = -0.9d0; xmax = 1.0d0;
+                ymin = -0.9d0; ymax = 1.0d0;
+                !print *, 'Default Case'
+        end select
         Lx = xmax - xmin
         Ly = ymax - ymin
 
@@ -91,7 +105,7 @@ module grid
             if(ndim.ge.1) global_vertices(ivertex, 1) = Lx*(i-1.0d0)/(nivertex-1) + xmin
             if(ndim.ge.2) then
                 ! Square grid
-                global_vertices(ivertex,1) = Lx*(i-1.0d0)/(nivertex-1) + xmin
+                global_vertices(ivertex,1) = Lx*(i-1.0d0)/(nivertex-1.0d0) + xmin
                 global_vertices(ivertex,2) = Ly*(j-1.0d0)/(njvertex-1.0d0) + ymin
                 ! Parallelogram grid
                 !global_vertices(ivertex,1) = Lx*(i-1.0d0)/(nivertex-1) + xmin
@@ -109,19 +123,23 @@ module grid
 
         allocate(EtoV(nvertex_element,nele))
         call setEtoV
+
+        ! Setup elements vertices, map the reference elements and evaluate the Jacobians
         do iele = 1, nele
             call element_set_vertices(elements(iele), EtoV(:,iele))
             call map_ref_to_phys(elements(iele))
             !call element_jacobian_eval(elements(iele))
             call GeometricFactors(elements(iele)%x_cub, elements(iele)%nnode_cub, elements(iele), &
-                elements(iele)%drdx_cub, elements(iele)%dsdx_cub, elements(iele)%drdy_cub, elements(iele)%dsdy_cub, elements(iele)%Jac_cub)
+                elements(iele)%drdx_cub, elements(iele)%dsdx_cub, &
+                elements(iele)%drdy_cub, elements(iele)%dsdy_cub, elements(iele)%Jac_cub)
             do iface = 1, elements(iele)%nface
-            call GeometricFactors(elements(iele)%x_face(:,:,iface), elements(iele)%nnode_face, elements(iele), &
-                elements(iele)%drdx_face(:,iface), elements(iele)%dsdx_face(:,iface), elements(iele)%drdy_face(:,iface), elements(iele)%dsdy_face(:,iface), elements(iele)%Jac_face(:,iface))
+                call GeometricFactors(elements(iele)%x_face(:,:,iface), elements(iele)%nnode_face, elements(iele), &
+                    elements(iele)%drdx_face(:,iface), elements(iele)%dsdx_face(:,iface), &
+                    elements(iele)%drdy_face(:,iface), elements(iele)%dsdy_face(:,iface), elements(iele)%Jac_face(:,iface))
                 ! hardcoded normals of 1.0
-                elements(iele)%Fscale(:,iface) = 1.0 / elements(iele)%Jac_face(:,iface)
+                !elements(iele)%Fscale(:,iface) = 1.0d0 / elements(iele)%Jac_face(:,iface)
+                elements(iele)%Fscale(:,iface) = elements(iele)%drdx_face(:,iface)! / elements(iele)%Jac_face(:,iface)
             end do
-            !call GeometricFactors(xloc, npts, ele, drdx, dsdx, drdy, dsdy, Jac)
         end do
 
         ! Create global faces list
@@ -183,13 +201,6 @@ module grid
                     global_faces(iface_global)%ele_conn(2) = iele2
                     global_faces(iface_global)%ele_face(2) = iface_element2
                     global_faces(iface_global)%reversed = .not.(allequal(vertices1, vertices2))
-!                   print*, 'iface_global', iface_global
-!                   print*, global_faces(iface_global)%reversed 
-!                   print*, 'ele', iele1, iele2
-!                   print*, 'face', iface_element1, iface_element2
-!                   print*, 'ivertex1', vertices1_sorted
-!                   print*, 'ivertex2', vertices2_sorted
-!                   print*,
                 end if
             end do
             end do
@@ -240,27 +251,7 @@ module grid
                 elements(iele2)%face_pointer(2) = iface_global
             end do
         end if
-!       do iele = 1, nele
-!           print*, 'ele', iele
-!           print*, 'EtoV', EtoV(:,iele)
-!           print*,
-!       end do
-!       do iface = 1, nface_global
-!           print*, 'face', iface
-!           print*, 'ele_conn', global_faces(iface)%ele_conn(:)
-!           print*, 'ele_face', global_faces(iface)%ele_face(:)
-!           print*,
-!       end do
-!       do iele = 1, nele
-!           print*, 'ele', iele
-!           print*, 'face_pointer', elements(iele)%face_pointer(:)
-!           print*,
-!       end do
 
-    !   allocate(normals(ndim,npts_face,nface_element,nele))
-    !   ! Create surface normals
-    !   normals(:,1) = -1.0d0
-    !   normals(2,:) = 1.0d0
 
     !   dxdr = matmul(Dr,x)
     !   if(.not. inodal) dxdr = matmul(Vander,matmul(Dr,matmul(VanderInv,x)))
@@ -395,16 +386,8 @@ module grid
         else if(ele%typ.eq.2) then
             edim = 2
             allocate(phys_n(refe%nnode_cub, edim))
-!           allocate(ref_v(4,edim), phys_v(4,edim), ref_n(refe%nnode_cub, edim), phys_n(refe%nnode_cub, edim))
-!           do i = 1, 4
-!               ref_v(i,1:edim) = refe%vertices( i,1:edim)
-!               phys_v(i,1:edim) = global_vertices( ele%vertices(i),1:edim))
-!           end do
-!           do i = 1, nbasis
-!               ref_n(i, 1:edim) = refe%nodes_cub(i,1:edim)
-!           end do
-!           !call rbf(ref_v, phys_v, ref_n, phys_n)
-            quadref1D(1) = -1.0; quadref1D(2) = 1.0;
+            quadref1D(1) = -1.0d0; quadref1D(2) = 1.0d0;
+            !quadref1D(1) = 0.0d0; quadref1D(2) = 1.0d0;
             quadphys(1,1,1:edim) = global_vertices(ele%vertices(1), 1:edim)
             quadphys(2,1,1:edim) = global_vertices(ele%vertices(2), 1:edim)
             quadphys(2,2,1:edim) = global_vertices(ele%vertices(3), 1:edim)
@@ -423,17 +406,8 @@ module grid
                 do j = 1, refe%nnode_face
                     ele%x_face(j,1:edim,i) = phys_n(j, 1:edim)
                 end do
-!               print*,refe%nodes_face(:,:,i)
-!               print*,ele%x_face(:,i,:)
             end do
 
-            !dref(1:edim) = refe%vertices(1:edim, 3) - refe%vertices(1:edim, 1)
-            !x0(1:edim)   = global_vertices(1:edim, ele%vertices(1))
-            !dx(1:edim)   = global_vertices(1:edim, ele%vertices(3)) - global_vertices(1:edim,ele%vertices(1))
-            !do i = 1, nbasis
-            !    xrel(1:edim) = refe%nodes_cub(1:edim,i) - refe%vertices(1:edim,1)
-            !    ele%x_cub(i, 1:edim) = x0(1:edim) + xrel(1:edim) /dref(1:edim) * dx(1:edim)
-            !end do
         end if
         return
     end subroutine map_ref_to_phys
@@ -466,65 +440,13 @@ module grid
     integer :: nx, i, j
     real(dp) :: xd(nx), xi, yi
     yi = 0.0d0
-!   if(xi.ne.xd(i)) then
-        do j = 1, nx
-            if(j.ne.i) then
-                yi = yi + (xi - xd(j)) / (xd(i) - xd(j))
-            end if
-        end do
-!   end if
+    do j = 1, nx
+        if(j.ne.i) then
+            yi = yi + (xi - xd(j)) / (xd(i) - xd(j))
+        end if
+    end do
     end subroutine lagrange_basis_function_1D
 
-    subroutine rbf(x, fx, xp, fp)
-    implicit none
-    real(dp) :: x(:,:), fx(:,:), xp(:,:), fp(:,:)
-    integer :: nx, np
-    integer :: ix1, ix2, ip
-    real(dp), allocatable :: M(:,:), Minv(:,:), A(:,:)
-    real(dp) :: dist, rbfunc
-    integer :: info, ipiv(nbasis)
-
-    nx = size(x,1)
-    np = size(xp,1)
-    fp = 0.0d0
-
-    allocate(M(nx, nx), Minv(nx,nx), A(np, nx))
-    do ix1 = 1, nx
-        do ix2 = ix1, nx
-            dist = sqrt(sum((x(ix1,:) - x(ix2,:))**2))
-            dist = dist / 2
-            rbfunc = merge( (1.0d0-dist**4)*(4*dist+1.0d0), 0.0d0, dist < 1.0d0)
-            M(ix1,ix2) = rbfunc
-            M(ix2,ix1) = rbfunc
-        end do
-        do ip = 1, np
-            dist = sqrt(sum((xp(ip,:) - x(ix1,:))**2))
-            dist = dist / 2
-            rbfunc = merge( (1.0d0-dist**4)*(4*dist+1.0d0), 0.0d0, dist < 1.0d0)
-            A(ip,ix1) = rbfunc
-        end do
-    end do
-
-    MInv = 0.0d0
-    do ix1 = 1, nx
-        MInv(ix1,ix1) = 1.0d0
-    end do
-    call dgesv(nx, nx, M, nx, ipiv, MInv, nx, info )
-    if(info.ne.0) print *, 'Failed to evaluate inverse M rbf'
-
-    fp = matmul(matmul(A,Minv), fx)
-!   call printmatrix(M)
-!   print*, 'asasdaasdd'
-!   print*, nx, np
-!   do ix1 = 1, nx
-!   print*, x(ix1,1), x(ix1,2), 'maps to', fx(ix1,1), fx(ix1,2)
-!   end do
-!   print*,
-!   do ix1 = 1, np
-!   print*, xp(ix1,1), xp(ix1,2), 'maps to', fp(ix1,1), fp(ix1,2)
-!   end do
-
-    end subroutine rbf
 
     subroutine GeometricFactors(xloc, npts, ele, drdx, dsdx, drdy, dsdy, Jac)
     use matrices
@@ -539,16 +461,26 @@ module grid
     real(dp), dimension(npts) :: Jac
 
     call VandermondeGrad(Vgrad, xloc, npts, ref_ele(ele%typ)%p%order)
-    dxdr = matmul(Vgrad(:,:,1),matmul(VanderInv, ele%x_cub(:,1)))
-    if(ndim.ge.2) then
-        dxds = matmul(Vgrad(:,:,2),matmul(VanderInv, ele%x_cub(:,1)))
-        dydr = matmul(Vgrad(:,:,1),matmul(VanderInv, ele%x_cub(:,2)))
-        dyds = matmul(Vgrad(:,:,2),matmul(VanderInv, ele%x_cub(:,2)))
+    if(.not. inodal) then
+        ! Same for nodal and modal????
+        dxdr = matmul(Vgrad(:,:,1),matmul(VanderInv, ele%x_cub(:,1)))
+        if(ndim.ge.2) then
+            dxds = matmul(Vgrad(:,:,2),matmul(VanderInv, ele%x_cub(:,1)))
+            dydr = matmul(Vgrad(:,:,1),matmul(VanderInv, ele%x_cub(:,2)))
+            dyds = matmul(Vgrad(:,:,2),matmul(VanderInv, ele%x_cub(:,2)))
+        end if
+    else
+        dxdr = matmul(Vgrad(:,:,1),matmul(VanderInv, ele%x_cub(:,1)))
+        if(ndim.ge.2) then
+            dxds = matmul(Vgrad(:,:,2),matmul(VanderInv, ele%x_cub(:,1)))
+            dydr = matmul(Vgrad(:,:,1),matmul(VanderInv, ele%x_cub(:,2)))
+            dyds = matmul(Vgrad(:,:,2),matmul(VanderInv, ele%x_cub(:,2)))
+        end if
     end if
 
     if(ndim.eq.1) then
         Jac = dxdr
-        drdx = 1/Jac
+        drdx = 1.0d0/Jac
     else if(ndim.eq.2) then
         Jac = dxdr*dyds - dxds*dydr
         drdx = dyds/Jac
@@ -559,39 +491,5 @@ module grid
 
     end subroutine
 
-
-
-!   subroutine geom2D(xloc, npts, ele, drdx_cub, dsdx_cub, drdy, dsdy, Jac)
-!   use matrices
-!   use element_mod
-!   implicit none
-!   integer :: npts
-!   real(dp), dimension(npts, ndim) :: xloc
-!   type(element) :: ele
-!   real(dp), dimension(npts, nbasis, ndim) :: Vgrad
-!   real(dp), dimension(:,:) :: Dr, Ds, V, VInv
-!   real(dp), dimension(:) :: drdx_cub, dsdx_cub, drdy, dsdy
-!   real(dp), dimension(:) :: dxdr, dxds, dydr, dyds
-!   real(dp), dimension(:) :: Jac
-
-!   call Vandermonde(Vref, xref, nbasis, porder)
-!   call invertMatrix(Vref, VrefInv, nbasis)
-!   call VandermondeGrad(Vgradphys, xphys, nnode_cub, porder)
-
-!   ! Convert xref into xmodal, VanderInv*x
-!   ! To get dxdr at xloc, multiply xmodal by dbasis/dr = Vgrad
-!   dxdr = matmul(Vander,matmul(Dr,matmul(VanderInv, ele%x_cub(:,1))))
-!   dxds = matmul(Vander,matmul(Ds,matmul(VanderInv, ele%x_cub(:,1))))
-!   dydr = matmul(Vander,matmul(Dr,matmul(VanderInv, ele%x_cub(:,2))))
-!   dyds = matmul(Vander,matmul(Ds,matmul(VanderInv, ele%x_cub(:,2))))
-
-!   ele%Jac = ele%dxdr*ele%dyds - ele%dxds*ele%dydr
-!   ele%drdx_cub = ele%dyds/ele%Jac
-!   ele%dsdx_cub = -ele%dydr/ele%Jac
-!   ele%drdy = -ele%dxds/ele%Jac
-!   ele%dsdy = ele%dxdr/ele%Jac
-
-!   end subroutine geom2D
-!
 
 end module grid

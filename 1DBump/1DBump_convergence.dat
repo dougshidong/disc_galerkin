@@ -1,0 +1,66 @@
+order: 1     nele: 4      quad error: 4.184536e-01   slope: 0.000000e+00     slope2: 0.000000e+00
+order: 1     nele: 6      quad error: 2.601888e-01   slope: 1.171885e+00     slope2: 0.000000e+00
+order: 1     nele: 8      quad error: 1.652214e-01   slope: 1.578552e+00     slope2: 1.329589e+00
+order: 1     nele: 11     quad error: 1.801100e-01   slope: -2.709387e-01    slope2: 5.912651e-01
+order: 1     nele: 15     quad error: 1.169635e-01   slope: 1.391903e+00     slope2: 5.458481e-01
+order: 1     nele: 21     quad error: 5.923831e-02   slope: 2.021842e+00     slope2: 1.723955e+00
+order: 1     nele: 29     quad error: 3.128261e-02   slope: 1.978187e+00     slope2: 2.000619e+00
+order: 1     nele: 40     quad error: 1.705496e-02   slope: 1.886357e+00     slope2: 1.932385e+00
+order: 1     nele: 56     quad error: 9.009053e-03   slope: 1.896771e+00     slope2: 1.891721e+00
+order: 1     nele: 76     quad error: 5.014392e-03   slope: 1.918641e+00     slope2: 1.907001e+00
+**************
+order: 2     nele: 4      quad error: 1.622700e-01   slope: 0.000000e+00     slope2: 0.000000e+00
+order: 2     nele: 6      quad error: 8.159719e-02   slope: 1.695501e+00     slope2: 0.000000e+00
+order: 2     nele: 8      quad error: 6.448773e-02   slope: 8.179859e-01     slope2: 1.355204e+00
+order: 2     nele: 11     quad error: 2.275825e-02   slope: 3.270639e+00     slope2: 2.127250e+00
+order: 2     nele: 15     quad error: 6.486039e-03   slope: 4.047254e+00     slope2: 3.652112e+00
+order: 2     nele: 21     quad error: 8.985134e-03   slope: -9.686370e-01    slope2: 1.403288e+00
+order: 2     nele: 29     quad error: 4.498887e-03   slope: 2.143118e+00     slope2: 5.441393e-01
+order: 2     nele: 40     quad error: 1.727990e-03   slope: 2.975498e+00     slope2: 2.558283e+00
+order: 2     nele: 56     quad error: 5.295509e-04   slope: 3.514955e+00     slope2: 3.253362e+00
+order: 2     nele: 76     quad error: 2.302056e-04   slope: 2.727920e+00     slope2: 3.146833e+00
+**************
+order: 3     nele: 4      quad error: 9.771876e-02   slope: 0.000000e+00     slope2: 0.000000e+00
+order: 3     nele: 6      quad error: 7.706015e-02   slope: 5.857650e-01     slope2: 0.000000e+00
+order: 3     nele: 8      quad error: 5.148731e-02   slope: 1.401724e+00     slope2: 9.021912e-01
+order: 3     nele: 11     quad error: 2.160309e-02   slope: 2.727238e+00     slope2: 2.109304e+00
+order: 3     nele: 15     quad error: 8.252010e-03   slope: 3.102899e+00     slope2: 2.911762e+00
+order: 3     nele: 21     quad error: 2.048182e-03   slope: 4.141514e+00     slope2: 3.650371e+00
+order: 3     nele: 29     quad error: 4.992472e-04   slope: 4.373366e+00     slope2: 4.254229e+00
+order: 3     nele: 40     quad error: 1.310888e-04   slope: 4.158254e+00     slope2: 4.266075e+00
+order: 3     nele: 56     quad error: 2.775986e-05   slope: 4.613408e+00     slope2: 4.392695e+00
+order: 3     nele: 76     quad error: 9.275537e-06   slope: 3.589641e+00     slope2: 4.134559e+00
+**************
+order: 4     nele: 4      quad error: 8.463475e-02   slope: 0.000000e+00     slope2: 0.000000e+00
+order: 4     nele: 6      quad error: 4.154015e-02   slope: 1.755230e+00     slope2: 0.000000e+00
+order: 4     nele: 8      quad error: 8.927147e-03   slope: 5.344662e+00     slope2: 3.147200e+00
+order: 4     nele: 11     quad error: 2.586950e-03   slope: 3.889473e+00     slope2: 4.567859e+00
+order: 4     nele: 15     quad error: 8.492476e-04   slope: 3.591380e+00     slope2: 3.743050e+00
+order: 4     nele: 21     quad error: 1.691946e-04   slope: 4.794753e+00     slope2: 4.225699e+00
+order: 4     nele: 29     quad error: 4.623445e-05   slope: 4.019304e+00     slope2: 4.417769e+00
+order: 4     nele: 40     quad error: 9.291665e-06   slope: 4.989705e+00     slope2: 4.503310e+00
+order: 4     nele: 56     quad error: 1.490683e-06   slope: 5.438438e+00     slope2: 5.220839e+00
+order: 4     nele: 76     quad error: 3.280932e-07   slope: 4.956722e+00     slope2: 5.213124e+00
+**************
+order: 5     nele: 4      quad error: 5.325062e-02   slope: 0.000000e+00     slope2: 0.000000e+00
+order: 5     nele: 6      quad error: 6.457494e-03   slope: 5.203328e+00     slope2: 0.000000e+00
+order: 5     nele: 8      quad error: 4.835779e-03   slope: 1.005273e+00     slope2: 3.575337e+00
+order: 5     nele: 11     quad error: 1.465472e-03   slope: 3.748944e+00     slope2: 2.469887e+00
+order: 5     nele: 15     quad error: 2.051589e-04   slope: 6.339243e+00     slope2: 5.021297e+00
+order: 5     nele: 21     quad error: 3.010049e-05   slope: 5.704018e+00     slope2: 6.004404e+00
+order: 5     nele: 29     quad error: 3.625410e-06   slope: 6.557461e+00     slope2: 6.118918e+00
+order: 5     nele: 40     quad error: 5.523706e-07   slope: 5.850744e+00     slope2: 6.204973e+00
+order: 5     nele: 56     quad error: 6.830875e-08   slope: 6.212047e+00     slope2: 6.036844e+00
+order: 5     nele: 76     quad error: 1.140858e-08   slope: 5.860445e+00     slope2: 6.047591e+00
+**************
+order: 6     nele: 4      quad error: 2.049337e-02   slope: 0.000000e+00     slope2: 0.000000e+00
+order: 6     nele: 6      quad error: 6.488615e-03   slope: 2.836379e+00     slope2: 0.000000e+00
+order: 6     nele: 8      quad error: 1.786674e-03   slope: 4.483051e+00     slope2: 3.474953e+00
+order: 6     nele: 11     quad error: 1.558039e-04   slope: 7.660493e+00     slope2: 6.179219e+00
+order: 6     nele: 15     quad error: 2.910392e-05   slope: 5.409314e+00     slope2: 6.554715e+00
+order: 6     nele: 21     quad error: 2.833200e-06   slope: 6.923205e+00     slope2: 6.207313e+00
+order: 6     nele: 29     quad error: 3.192238e-07   slope: 6.764094e+00     slope2: 6.845853e+00
+order: 6     nele: 40     quad error: 3.393660e-08   slope: 6.969877e+00     slope2: 6.866732e+00
+order: 6     nele: 56     quad error: 2.918619e-09   slope: 7.291488e+00     slope2: 7.135533e+00
+order: 6     nele: 76     quad error: 3.805726e-10   slope: 6.670960e+00     slope2: 7.001247e+00
+

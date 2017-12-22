@@ -10,7 +10,8 @@ type element
     integer :: nnode_cub, nnode_face
     integer, allocatable :: vertices(:)
     integer, allocatable :: face_pointer(:)
-    real(dp), allocatable :: u(:,:), f(:,:,:)
+    real(dp), allocatable :: u(:,:), f(:,:,:), g(:,:)
+    real(dp), allocatable :: u_exact(:,:), u_error(:,:)
     real(dp), allocatable :: x_cub(:,:), x_face(:,:,:)
     real(dp), allocatable :: resiu(:,:), rhs(:,:)
     real(dp), allocatable :: normals(:,:,:)
@@ -56,6 +57,10 @@ contains
 
     allocate(ele%u(nbasis, nstate))
     allocate(ele%f(nbasis, nstate, ndim))
+    allocate(ele%g(nbasis, nstate))
+
+    allocate(ele%u_exact(nbasis, nstate))
+    allocate(ele%u_error(nbasis, nstate))
 
     allocate(ele%x_cub(ele%nnode_cub, ndim))
     allocate(ele%x_face(ele%nnode_face, ndim, refe%nface))
@@ -94,11 +99,11 @@ contains
     return
     end function init_ele
 
-    subroutine element_jacobian_eval(ele)
-    use matrices, only: Dr, Ds, Vander, VanderInv
-    implicit none
-    type(element) :: ele
-    type(ref) :: refe
+!   subroutine element_jacobian_eval(ele)
+!   use matrices, only: Dr, Ds, Vander, VanderInv
+!   implicit none
+!   type(element) :: ele
+!   type(ref) :: refe
 
 
 !   refe = ref_ele(ele%typ)%p
@@ -153,6 +158,6 @@ contains
 !       ele%dsdy_face = ele%dxdr_face/ele%Jac_face
 !   end if
 
-    end subroutine
+!   end subroutine
 
 end module element_mod

@@ -841,7 +841,7 @@ subroutine gmsh_mesh2d_node_size_example ( node_num, node_dim )
 
   return
 end
-subroutine gmsh_mesh2d_write ( gmsh_filename, m, node_num, node_x, &
+subroutine msh_mesh2d_write ( gmsh_filename, m, node_num, node_x, &
   element_order, element_num, element_node )
 
 !*****************************************************************************80

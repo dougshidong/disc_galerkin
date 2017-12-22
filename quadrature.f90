@@ -11,7 +11,7 @@ logical :: quad_init = .false.
 contains
 
 subroutine initialize_quad
-use glob, only: order,nbasis,select_node
+use glob, only: order,select_node
 
 if(quad_init) return; quad_init = .true.
 
@@ -26,7 +26,7 @@ select case(select_node)
         call JacobiGQ(quadR, quadW, quad_alpha, quad_beta, quad_npts-1)
         !call legendreGLNodesWeights(quad_npts-1, quadR, quadW)
 end select
-quadR = 0.5d0*((refb-refa)*quadR+(refa+refb))
+!quadR = 0.5d0*((refb-refa)*quadR+(refa+refb))
 end subroutine initialize_quad
 
 subroutine finalize_quad
@@ -38,7 +38,8 @@ end subroutine finalize_quad
 real(dp) function integrate(f)
 implicit none
 real(dp) :: f(quad_npts)
-integrate = 0.5d0*(refb-refa)*dot_product(quadW, f)
+integrate = dot_product(quadW, f)
+!integrate = 0.5d0*(refb-refa)*dot_product(quadW, f)
 end function integrate
 
 subroutine JacobiGQ(ref, weights, alpha, beta, order)
@@ -50,7 +51,7 @@ integer,    intent(in)  :: order
 real(dp),   intent(out)  :: ref(order+1), weights(order+1)
 
 real(dp) :: Jac(order+1, order+1)
-real(dp) :: h, eps = 1.0e-10
+real(dp) :: h, eps = 1.0e-16
 integer ::i
 integer :: lda, info, lwork
 integer,parameter :: lwmax = 100

@@ -4,7 +4,10 @@ FC=     gfortran
 FV=     -std=f2008
 #FFLAGS= -O3
 #FFLAGS= -g -Wall -fimplicit-none -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
-FFLAGS= -g -Wall -Wextra -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+#FFLAGS= -g -Wall -Wextra -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+#FFLAGS= -pg -fprofile-arcs -ftest-coverage -Wall -Wextra -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=na
+#FFLAGS= -pg -Wall -Wextra -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+FFLAGS= -O3 -fimplicit-none -ffree-line-length-0 -fdefault-real-8
 
 
 
@@ -32,8 +35,10 @@ SRC= \
     	matrices.f90	\
     	element_mod.f90\
     	grid.f90	\
-    	advecRHS1D.f90	\
+    	advecRHS2D.f90	\
+		testcases.f90 	\
 		main.f90
+### 	advecRHS2D_old.f90 	\
 ####	lift1D.f90	\
 ####	stability.f90	\
 
