@@ -79,15 +79,15 @@ do iface = 1, nface_global
     do idir = 1, ndim
         if(global_faces(iface)%reversed) then
             flux_numerical(1:nnode_face, istate, idir, iface) = flux_numerical(1:nnode_face, istate, idir, iface) &
-               + 0.5d0*(ffaces(1:nnode_face,istate,idir,iface1,iele1) + ffaces(nnode_face:1:-1,istate,idir,iface2,iele2)) &
-               + 0.5d0*wavespeed(idir)*(ufaces(1:nnode_face,istate,iface1,iele1) &
+               + (ffaces(1:nnode_face,istate,idir,iface1,iele1) + ffaces(nnode_face:1:-1,istate,idir,iface2,iele2)) &
+               + wavespeed(idir)*(ufaces(1:nnode_face,istate,iface1,iele1) &
                                         * elements(iele1)%normals(1:nnode_face,iface1,idir) &
                                       + ufaces(nnode_face:1:-1,istate,iface2,iele2) &
                                         * elements(iele2)%normals(nnode_face:1:-1,iface2,idir) )
         else
             flux_numerical(1:nnode_face, istate, idir, iface) = flux_numerical(1:nnode_face, istate, idir, iface) &
-               + 0.5d0*(ffaces(1:nnode_face,istate,idir,iface1,iele1) + ffaces(1:nnode_face,istate,idir,iface2,iele2)) &
-               + 0.5d0*wavespeed(idir)*(ufaces(1:nnode_face,istate,iface1,iele1) &
+               + (ffaces(1:nnode_face,istate,idir,iface1,iele1) + ffaces(1:nnode_face,istate,idir,iface2,iele2)) &
+               + wavespeed(idir)*(ufaces(1:nnode_face,istate,iface1,iele1) &
                                         * elements(iele1)%normals(1:nnode_face,iface1,idir) &
                                       + ufaces(1:nnode_face,istate,iface2,iele2) &
                                         * elements(iele2)%normals(1:nnode_face,iface2,idir) )
@@ -97,6 +97,7 @@ do iface = 1, nface_global
     !print*, 'new num', iface, 1, flux_numerical(1:nnode_face, 1, 1, iface)
     !print*, 'new num', iface, 2, flux_numerical(1:nnode_face, 1, 2, iface)
 end do
+flux_numerical = 0.5d0*flux_numerical
 !
 df_n = 0.0d0
 do iele = 1, nele
@@ -137,7 +138,7 @@ do iele = 1, nele
 !           print*,elements(iele)%Jac_cub
 !           print*,-matmul(matmul(MassInv,Sr),elements(iele)%f(:,istate,1))
             elements(iele)%rhs(:,istate) = elements(iele)%rhs(:,istate) &
-                - elements(iele)%drdx_cub * matmul(matmul(MassInv,Sr),elements(iele)%f(:,istate,1)) &
+                - elements(iele)%drdx_cub * matmul(Dr,elements(iele)%f(:,istate,1)) &
                 - elements(iele)%dsdx_cub * matmul(Ds,elements(iele)%f(:,istate,1)) &
                 - elements(iele)%drdy_cub * matmul(Dr,elements(iele)%f(:,istate,2)) &
                 - elements(iele)%dsdy_cub * matmul(Ds,elements(iele)%f(:,istate,2))
@@ -151,7 +152,7 @@ do iele = 1, nele
                 + matmul(matmul(MassInv,Lift(1:nbasis, 1:nnode_face, iface)), df_n(1:nnode_face, istate, iface, iele))
         end do
 
-        !elements(iele)%rhs(:,istate) = elements(iele)%rhs(:,istate) + elements(iele)%g(:,istate) 
+        elements(iele)%rhs(:,istate) = elements(iele)%rhs(:,istate) + elements(iele)%g(:,istate) 
 
     end do
 end do

@@ -69,7 +69,7 @@ subroutine initialize_u
                     elements(iele)%u(:,1) = sin(elements(iele)%x_cub(:,1)) &
                                           + cos(elements(iele)%x_cub(:,2)) + 1.0d0
                     elements(iele)%u_exact(:,1) = cos(elements(iele)%x_cub(:,1)) &
-                                                - sin(elements(iele)%x_cub(:,1))
+                                                - sin(elements(iele)%x_cub(:,2))
                  end if
             case(4)
                 finalTime = 1000000
@@ -82,7 +82,7 @@ subroutine initialize_u
                     elements(iele)%u(:,1) = 0.0d0
                     elements(iele)%u(:,1) = cos(elements(iele)%x_cub(:,1)) &
                                             - sin(elements(iele)%x_cub(:,2))
-                    elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
+                    elements(iele)%g(:,1) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
                     elements(iele)%u_exact(:,1) = cos(elements(iele)%x_cub(:,1)) &
                                                 - sin(elements(iele)%x_cub(:,2))
                 end if

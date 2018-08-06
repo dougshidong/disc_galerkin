@@ -157,7 +157,7 @@ module matrices
                 end do
             end do
         end do
-        if(.not.inodal) Sr = tempStiff(:,:,1)
+        Sr = tempStiff(:,:,1)
         if(inodal) Sr = matmul(matmul(transpose(VanderInv), tempStiff(:,:,1)), VanderInv)
         if(ndim.ge.2) then
             if(.not.inodal) Ss = tempStiff(:,:,2)

@@ -70,7 +70,8 @@ module grid
 
         select case(icase)
             case(-1)
-                xmin = -1.0d0; xmax = 1.0d0;
+                xmin = -1.0d0*PI; xmax = 1.0d0*PI;
+                ymin = -1.0d0*PI; ymax = 1.0d0*PI;
                 !print *, 'Sine wave case'
             case(0)
                 xmin = -1.0d0*PI; xmax = 1.0d0*PI;

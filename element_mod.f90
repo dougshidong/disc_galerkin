@@ -11,6 +11,10 @@ type element
     integer, allocatable :: vertices(:)
     integer, allocatable :: face_pointer(:)
     real(dp), allocatable :: u(:,:), f(:,:,:), g(:,:)
+    real(dp), allocatable :: u1(:,:)
+    real(dp), allocatable :: u2(:,:)
+    real(dp), allocatable :: u3(:,:)
+    real(dp), allocatable :: u4(:,:)
     real(dp), allocatable :: u_exact(:,:), u_error(:,:)
     real(dp), allocatable :: x_cub(:,:), x_face(:,:,:)
     real(dp), allocatable :: resiu(:,:), rhs(:,:)
@@ -56,6 +60,10 @@ contains
     if(ndim.eq.2) ele%normals(:, 4, 1) = -1.0d0
 
     allocate(ele%u(nbasis, nstate))
+    allocate(ele%u1(nbasis, nstate))
+    allocate(ele%u2(nbasis, nstate))
+    allocate(ele%u3(nbasis, nstate))
+    allocate(ele%u4(nbasis, nstate))
     allocate(ele%f(nbasis, nstate, ndim))
     allocate(ele%g(nbasis, nstate))
 

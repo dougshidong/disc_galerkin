@@ -31,6 +31,7 @@ SRC= \
     	jacobi.f90	\
     	monomial.f90	\
         bezier.f90      \
+	lagrange.f90	\
     	poly.f90	\
     	matrices.f90	\
     	element_mod.f90\

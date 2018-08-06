@@ -6,6 +6,7 @@ use monomial
 use bezier
 use bspline
 use nurbs
+use lagrange
 
 real(dp) :: poly_alpha, poly_beta
 
@@ -68,6 +69,8 @@ real(dp) :: polyx(:), polyVal(:)
 
 !ibasis = 1, ..., nbasis
 select case(polytype)
+    case(0)
+        call LagrangeP(polyx, ibasis, order, polyVal)
     case(1)
         call binomial_eval
         call BezierP(polyx, ibasis-1, order, polyVal)
@@ -91,6 +94,8 @@ real(dp) :: polyx(:), polyGrad(:)
 
 !ibasis = 1, ..., nbasis
 select case(polytype)
+    case(0)
+        call gradLagrangeP(polyx, ibasis, order, polyGrad)
     case(1)
         call binomial_eval
         call gradBezierP(polyx, ibasis-1, order, polyGrad)

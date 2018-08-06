@@ -31,17 +31,26 @@ orders = np.arange(2,5,dtype=np.int32)
 #if(testcase == 3): orders = np.arange(2,5,dtype=np.int32)
 
 wavespeed = [1.0, 1.0]
-testcase = 1
-finalTime = 0.1
-ndim = 1
+testcase = 0
+# finalTime = 1.0 # 2D Bump
+finalTime = 2.5 # 2D Sine
+ndim = 2
 ngrids = 10
 maxorders = 6
 elements = (2*np.logspace(0,ngrids-1,num=ngrids,base=1.5,dtype=np.float64)+1)
 elements = elements.astype(int)
 elements = (2*np.logspace(2,ngrids-1,num=ngrids,base=1.5,dtype=np.float64)+1)
+elements = (2*np.logspace(2,ngrids-1,num=ngrids,base=2,dtype=np.float64)+1)
 elements = elements.astype(int)
-#if(ndim==2): elements = np.array([3,4,5,6,7,8,9,10,11,12,13,14,15,16])
-#if(ndim==2): elements = np.array([3,4,5,6,7,8,9,10])
+elements = np.array([32]) # 2D Sine
+#if(ndim==2): elements = np.array([4,8,16,18,22,28,32,36,40])
+#if(ndim==2): elements = np.array([4,6,8,10])
+if(ndim==2): elements = np.array([4,8,12,16,20,24,28,32,36,40,44])
+if(ndim==2): elements = np.array([4,8,12,16,20,24,28,32]) # 2D Bump
+if(ndim==2): elements = np.array([3,4,5,6,7,8,9]) # 2D Sine
+#if(ndim==2): elements = np.array([4,8,12,16,20,24,28])
+#if(ndim==2): elements = np.array([8,10,12,14,16,20])
+elements = np.array([32]) # 2D Sine
 if(ndim==2): maxorders = 5
 orders = np.arange(1,maxorders+1,dtype=np.int32)
 print(elements)
@@ -86,18 +95,18 @@ if(len(sys.argv) == 1):
             os.system('./advection')
 
             if ndim == 1:
-                x0, u0 = np.loadtxt('init.x', unpack = True, dtype=np.float128,skiprows=0)
-                xf, uf = np.loadtxt('final.x', unpack = True, dtype=np.float128,skiprows=0)
+                x0, u0 = np.loadtxt('init.x', unpack = True, dtype=np.float64,skiprows=0)
+                xf, uf = np.loadtxt('final.x', unpack = True, dtype=np.float64,skiprows=0)
                 x = x0
             if ndim == 2:
-                x0, y0, u0 = np.loadtxt('init.x', unpack = True, dtype=np.float128,skiprows=0)
+                x0, y0, u0 = np.loadtxt('init.x', unpack = True, dtype=np.float64,skiprows=0)
                 xf, yf, uf = np.loadtxt('final.x', unpack = True, dtype=np.float64,skiprows=0)
                 x = x0
                 y = y0
 
 
-            quadR, quadW = np.loadtxt('quad.x', unpack = True, dtype=np.float128,skiprows=0)
-            cubR, cubS, cubW = np.loadtxt('cub2D.x', unpack = True, dtype=np.float128,skiprows=0)
+            quadR, quadW = np.loadtxt('quad.x', unpack = True, dtype=np.float64,skiprows=0)
+            cubR, cubS, cubW = np.loadtxt('cub2D.x', unpack = True, dtype=np.float64,skiprows=0)
             # Check quadrature
 #            if j==0:
 #                print('integral x**(2n-1)', np.dot(quadR**4.0,quadW), '=%f'%(2.0/(5.0)))
@@ -129,7 +138,7 @@ if(len(sys.argv) == 1):
                 for iele in range(nele):
                     poly = lagrange(x[iele*npts:(iele+1)*npts],uf[iele*npts:(iele+1)*npts])
                     xr = np.linspace(x[iele*npts],x[(iele+1)*npts-1],100,endpoint=True)
-                    a = (iele+1e-16)/(nele*1.0)*(xmax-xmin)+xmin
+                    a = (iele)/(nele*1.0)*(xmax-xmin)+xmin
                     b = (iele+1.0)/(nele*1.0)*(xmax-xmin)+xmin
                     xr = np.linspace(a, b, 100,endpoint=True)
                     ur = np.polyval(poly,xr)
@@ -207,7 +216,7 @@ if(len(sys.argv) == 1):
                     if(ndim == 2):
                         num += cubW[iref]*abs(err)**2
                         den += cubW[iref]*abs(u_exact_reshaped[iele,iref])**2
-            error[i,j] = np.sqrt(abs(num / (den+1e-16)))
+            error[i,j] = np.sqrt(abs(num / (den)))
 
 
 #           relerr = 0.0
@@ -229,7 +238,7 @@ if(len(sys.argv) == 1):
 #           error[i,j] = np.sqrt(relerr)
 
             logh = np.log10(h)
-            loge = np.log10(abs(error[i,:])+1e-16)
+            loge = np.log10(abs(error[i,:]))
             slope = 0.0
             if j > 0:
                 slope, intercept, r_value, p_value, std_err = linregress(logh[j-1:j+1],loge[j-1:j+1])
@@ -242,3 +251,49 @@ if(len(sys.argv) == 1):
         print('**************')
 pp.close()
 
+pdfName = 'Figures.pdf'
+pp=PdfPages(pdfName)
+slope_s= -2
+slope_e= None
+plt.figure()
+for i, order in enumerate(orders):
+    #plt.loglog(h, error[i,:],'-o', label='p=%d'%order)
+    logh = np.log10(h)
+    #logh = np.log10(elements)
+    loge = np.log10(error[i,:])
+
+    if j > 0:
+        slope1, intercept1, r_value, p_value, std_err = linregress(logh[j-1:j+1],loge[j-1:j+1])
+    slopes[i,j] = slope1
+    slope2 = 0.0
+    if j > 1:
+        slope2, intercept2, r_value, p_value, std_err = linregress(logh[j-2:j+1],loge[j-2:j+1])
+    plt.plot(logh, loge, '-o', label='p=%d,s=%3.2f'%(order,slope1))
+    xfid = np.linspace(np.log10(h[0]),np.log10(h[-1]))
+    #xfid = np.linspace(np.log10(elements[0]),np.log10(elements[-1]))
+    plt.plot(xfid, xfid*slope1+intercept1,'-k')
+    print('order=%d, s1=%f, s2=%f' %(order,slope1,slope2))
+plt.xlabel(r'$\log (h_k)$')
+if(ndim==2): plt.xlabel(r'$\log (\sqrt{h_k})$')
+#plt.xlabel(r'log(number of elements)')
+plt.ylabel(r'$\log(\|\| \mathbf{u}^* - \mathbf{u}_h \|\|_2)$')
+#plt.ylabel(r'log(error)')
+#plt.title('Spectral Convergence of DG')
+plt.legend(loc='best',fontsize='small')
+pp.savefig(bbx_inches='tight')
+pp.close()
+
+def tab(a):
+    """Returns a LaTeX bmatrix
+    :a: numpy array
+    :returns: LaTeX bmatrix as a string
+    """
+    if len(a.shape) > 2:
+        raise ValueError('bmatrix can at most display two dimensions')
+    lines = str(a).replace('[', '').replace(']', '').splitlines()
+    rv = [r'\begin{bmatrix}']
+    rv += ['  ' + ' & '.join(l.split()) + r' \\' for l in lines]
+    #rv +=  [r'\end{bmatrix}']
+    return '\n'.join(rv)
+print(tab(np.transpose(error))+'\n')
+print(tab(np.transpose(slopes))+'\n')

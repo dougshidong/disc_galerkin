@@ -59,72 +59,6 @@ call buildLift
 !!!
 call genGrid2D
 
-!do i = 1, nbasis
-!!print*, elements(1)%x_cub(1,i), elements(1)%x_cub(1,i)
-!if(ndim.eq.1) print*, ref_ele(ndim)%p%nodes_cub(1,i)
-!if(ndim.eq.1) print*, elements(1)%x_cub(i,1)
-!if(ndim.eq.2) print*, ref_ele(ndim)%p%nodes_cub(1,i), ref_ele(elements(1)%typ)%p%nodes_cub(2,i)
-!end do
-
-!print*,'dxdr_cub'
-!print*, elements(1)%dxdr_cub
-!if(ndim.ge.2) then
-!    print*, elements(1)%dxds_cub
-!    print*, elements(1)%dydr_cub
-!    print*, elements(1)%dyds_cub
-!end if
-!print*,
-!print*, elements(1)%drdx_cub
-!if(ndim.ge.2) then
-!    print*, elements(1)%dsdx_cub
-!    print*, elements(1)%drdy_cub
-!    print*, elements(1)%dsdy_cub
-!end if
-!print*,
-!print*,
-
-!print*, 'Vandermonde'
-!call printmatrix(Vander)
-!
-!print*, 'VanderGrad'
-!do i=1,ndim; call printmatrix(VanderGrad(:,:,i)); print*,' ' ; enddo;
-!print*, 'Vander*VanderGradT'
-!do i=1,ndim; call printmatrix(matmul(Vander,transpose(VanderGrad(:,:,i)))); print*,' ' ; enddo;
-!print*, 'Sr'
-!call printmatrix(transpose(Sr))
-!print*, 'Ss'
-!call printmatrix(transpose(Ss))
-
-!print*, 'M = (V*Vt)^-1'
-!if(inodal) call printmatrix(matmul(transpose(VanderInv),VanderInv))
-!if(.not. inodal) call printmatrix(matmul(transpose(VanderInv),VanderInv))
-!print*,
-!print*, 'Mass'
-!call printmatrix(Mass)
-!print*,
-!print*, 'Sr'
-!call printmatrix(Sr)
-!print*, 'Dr'
-!call printmatrix(Dr)
-!print*,
-!!call printmatrix(matmul(VanderInv,VanderGrad(:,:,1)))
-!call printmatrix(matmul(VanderGrad(:,:,1),VanderInv))
-!print*,
-!if(ndim.eq.2) then
-!    call printmatrix(Ss)
-!    print*,
-!    call printmatrix(Ds)
-!    print*,
-!end if
-!print*, 'Lift'
-!do i = 1, ref_ele(ndim)%p%nface
-!    call printmatrix(matmul(Mass,Lift(:,:,i)))
-!    print*,
-!end do
-
-!Dr = matmul(VanderGrad(:,:,1),VanderInv)
-!Ds = matmul(VanderGrad(:,:,2),VanderInv)
-
 call initialize_u
 ! umodal = VanderInv * u
 do i = 1, nele
@@ -157,6 +91,8 @@ else
     do i = 1, nele
         utemp = matmul(Dr,elements(i)%u)
         utemp(:,1) = elements(i)%drdx_cub(:) * utemp(:,1)
+        if(ndim.eq.2) utemp(:,1) = utemp(:,1) + elements(i)%drdy_cub(:) * matmul(Dr,elements(i)%u(:,1))
+        if(ndim.eq.2) utemp(:,1) = utemp(:,1) + elements(i)%dsdx_cub(:) * matmul(Ds,elements(i)%u(:,1))
         if(ndim.eq.2) utemp(:,1) = utemp(:,1) + elements(i)%dsdy_cub(:) * matmul(Ds,elements(i)%u(:,1))
         elements(i)%u = utemp
     end do
@@ -181,9 +117,9 @@ do i = 1, nele
 end do
 call output(k, ndim+1, 'final.x')
 
-call error_evaluate(error_abs, error_rel)
-!print*, 'Relative Error: ', error_rel
+!call error_evaluate(error_abs, error_rel)
 !print*, 'Absolute error: ', error_abs, 'Relative Error: ', error_rel
+!print*, 'Relative Error: ', error_rel
 
 ! Deallocate matrices
 call deallocate_matrices
@@ -207,7 +143,7 @@ real(dp) :: rk4a(5), rk4b(5), rk4c(5)
 real(dp) :: residual
 
 
-CFL = 0.05d0
+CFL = 0.1d0
 time = 0.0d0
 
 dxmin = 1e9
@@ -219,8 +155,10 @@ end do
 end do
 dt = 0.5d0 * CFL / maxval(wavespeed) * dxmin
 
+dt= 1.0e-3
+
 nstep = ceiling(finalTime/dt)
-dt = finalTime/nstep
+dt = finalTime/dble(nstep)
 !dt = 0.01d0
 !nstep = 1
 
@@ -241,6 +179,12 @@ rk4c(1:5) = (/  0.0d0, &
                 2526269341429.0d0/6820363962896.0d0, &
                 2006345519317.0d0/3224310063776.0d0, &
                 2802321613138.0d0/2924317926251.0d0 /)
+!print*, 'a', sum(rk4a(1:5))
+!print*, 'b', sum(rk4b(1:5))
+!print*, 'c', sum(rk4c(1:5))
+!do intrk = 1, 5
+!   print*,rk4a(intrk), rk4b(intrk), rk4c(intrk)
+!end do
 
 do tstep = 1, nstep
     if(tscheme.eq.1) then
@@ -255,33 +199,70 @@ do tstep = 1, nstep
 
                 ! Update source term
                 elements(iele)%g(:,istate) = 0.0d0
+                if(icase.eq.-1) then
+                    elements(iele)%g(:,istate) = 0.5d0*2.15d0*cos(2.15d0*elements(iele)%x_cub(:,1)+0.23d0)
+                end if
                 if(icase.eq.4) then
+                    if(ndim.eq.1) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) + cos(elements(iele)%x_cub(:,1))
+                    if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
                 end if
             end do
 
-!           if(swform.eq.0) call advecRHS2D
-!           if(swform.eq.1) call advecRHS2D_weak
-
             call advecRHS2D
-!           print*, elements(1)%rhs
-!           print*, elements(2)%rhs
-!           print*,
-!           call advecRHS2D_weak
-!           print*, elements(1)%rhs
-!           print*, elements(2)%rhs
-!           stop
-
-!           print*,
-!           print*, elements(2)%rhs
-!           stop
-            !call advecRHS2D_old
             residual = 0
             do iele = 1, nele
-                elements(iele)%resiu = rk4a(intrk)*elements(iele)%resiu + dt*elements(iele)%rhs
+                elements(iele)%resiu = rk4a(intrk)*elements(iele)%resiu 
+                elements(iele)%resiu = elements(iele)%resiu + dt*elements(iele)%rhs
                 elements(iele)%u = elements(iele)%u + rk4b(intrk)*elements(iele)%resiu
                 residual = residual + norm2(elements(iele)%resiu(:,1))
             end do
         end do
+    else if(tscheme.eq.2) then
+        do iele = 1, nele
+            elements(iele)%u_error = elements(iele)%u
+            istate = 1
+            elements(iele)%f(:,istate,1) = wavespeed(1)*elements(iele)%u(:,istate)
+            ! Update F
+            if(ndim.ge.2) elements(iele)%f(:,istate,2) = wavespeed(2)*elements(iele)%u(:,istate)
+
+            ! Update source term
+            elements(iele)%g(:,istate) = 0.0d0
+            if(icase.eq.-1) then
+                elements(iele)%g(:,istate) = 0.5d0*2.15d0*cos(2.15d0*elements(iele)%x_cub(:,1)+0.23d0)
+            end if
+            if(icase.eq.4) then
+                if(ndim.eq.1) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) + cos(elements(iele)%x_cub(:,1))
+                if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
+            end if
+        end do
+        call advecRHS2D
+        do iele = 1, nele
+            elements(iele)%resiu = dt*elements(iele)%rhs
+            elements(iele)%u = elements(iele)%u + dt*elements(iele)%rhs
+        end do
+        do iele = 1, nele
+            istate = 1
+            elements(iele)%f(:,istate,1) = wavespeed(1)*elements(iele)%u(:,istate)
+            ! Update F
+            if(ndim.ge.2) elements(iele)%f(:,istate,2) = wavespeed(2)*elements(iele)%u(:,istate)
+
+            ! Update source term
+            elements(iele)%g(:,istate) = 0.0d0
+            if(icase.eq.-1) then
+                elements(iele)%g(:,istate) = 0.5d0*2.15d0*cos(2.15d0*elements(iele)%x_cub(:,1)+0.23d0)
+            end if
+            if(icase.eq.4) then
+                if(ndim.eq.1) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) + cos(elements(iele)%x_cub(:,1))
+                if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
+            end if
+        end do
+        call advecRHS2D
+        residual = 0
+        do iele = 1, nele
+            elements(iele)%resiu = dt*elements(iele)%rhs
+            elements(iele)%u = 0.5*(elements(iele)%u_error + elements(iele)%u + dt*elements(iele)%rhs)
+        end do
+        !residual = residual + norm2(elements(iele)%resiu(:,1))
     else if(tscheme.eq.0) then
         do iele = 1, nele
             istate = 1
@@ -299,33 +280,113 @@ do tstep = 1, nstep
                 if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
             end if
         end do
-        !print*,nele
-        !print*, 'element 1 solution', elements(1)%u(:,1)
-        !print*, 'element 2 solution', elements(2)%u(:,1)
-        !print*, 'element 3 solution', elements(3)%u(:,1)
-        !print*, 'element 4 solution', elements(4)%u(:,1)
-        call advecRHS2D_weak
-        !call advecRHS2D
+        !call advecRHS2D_weak
+        call advecRHS2D
         residual = 0
         do iele = 1, nele
             elements(iele)%resiu = dt*elements(iele)%rhs
             elements(iele)%u = elements(iele)%u + elements(iele)%resiu
             residual = residual + norm2(elements(iele)%resiu(:,1))
         end do
+
+    else if(tscheme.eq.4) then
+        do iele = 1, nele
+            elements(iele)%u_error = elements(iele)%u
+            istate = 1
+            elements(iele)%f(:,istate,1) = wavespeed(1)*elements(iele)%u(:,istate)
+            ! Update F
+            if(ndim.ge.2) elements(iele)%f(:,istate,2) = wavespeed(2)*elements(iele)%u(:,istate)
+
+            ! Update source term
+            elements(iele)%g(:,istate) = 0.0d0
+            if(icase.eq.-1) then
+                elements(iele)%g(:,istate) = 0.5d0*2.15d0*cos(2.15d0*elements(iele)%x_cub(:,1)+0.23d0)
+            end if
+            if(icase.eq.4) then
+                if(ndim.eq.1) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) + cos(elements(iele)%x_cub(:,1))
+                if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
+            end if
+        end do
+        call advecRHS2D
+        do iele = 1, nele
+            elements(iele)%u1 = dt*elements(iele)%rhs
+            elements(iele)%u = elements(iele)%u_error+0.5d0*dt*elements(iele)%rhs
+        end do
+        do iele = 1, nele
+            istate = 1
+            elements(iele)%f(:,istate,1) = wavespeed(1)*elements(iele)%u(:,istate)
+            ! Update F
+            if(ndim.ge.2) elements(iele)%f(:,istate,2) = wavespeed(2)*elements(iele)%u(:,istate)
+
+            ! Update source term
+            elements(iele)%g(:,istate) = 0.0d0
+            if(icase.eq.-1) then
+                elements(iele)%g(:,istate) = 0.5d0*2.15d0*cos(2.15d0*elements(iele)%x_cub(:,1)+0.23d0)
+            end if
+            if(icase.eq.4) then
+                if(ndim.eq.1) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) + cos(elements(iele)%x_cub(:,1))
+                if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
+            end if
+        end do
+        call advecRHS2D
+        do iele = 1, nele
+            elements(iele)%u2 = dt*elements(iele)%rhs
+            elements(iele)%u = elements(iele)%u_error+0.5d0*dt*elements(iele)%rhs
+        end do
+        do iele = 1, nele
+            istate = 1
+            elements(iele)%f(:,istate,1) = wavespeed(1)*elements(iele)%u(:,istate)
+            ! Update F
+            if(ndim.ge.2) elements(iele)%f(:,istate,2) = wavespeed(2)*elements(iele)%u(:,istate)
+
+            ! Update source term
+            elements(iele)%g(:,istate) = 0.0d0
+            if(icase.eq.-1) then
+                elements(iele)%g(:,istate) = 0.5d0*2.15d0*cos(2.15d0*elements(iele)%x_cub(:,1)+0.23d0)
+            end if
+            if(icase.eq.4) then
+                if(ndim.eq.1) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) + cos(elements(iele)%x_cub(:,1))
+                if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
+            end if
+        end do
+        call advecRHS2D
+        do iele = 1, nele
+            elements(iele)%u3 = dt*elements(iele)%rhs
+            elements(iele)%u = elements(iele)%u_error+dt*elements(iele)%rhs
+        end do
+        do iele = 1, nele
+            istate = 1
+            elements(iele)%f(:,istate,1) = wavespeed(1)*elements(iele)%u(:,istate)
+            ! Update F
+            if(ndim.ge.2) elements(iele)%f(:,istate,2) = wavespeed(2)*elements(iele)%u(:,istate)
+
+            ! Update source term
+            elements(iele)%g(:,istate) = 0.0d0
+            if(icase.eq.-1) then
+                elements(iele)%g(:,istate) = 0.5d0*2.15d0*cos(2.15d0*elements(iele)%x_cub(:,1)+0.23d0)
+            end if
+            if(icase.eq.4) then
+                if(ndim.eq.1) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) + cos(elements(iele)%x_cub(:,1))
+                if(ndim.eq.2) elements(iele)%g(:,istate) = -sin(elements(iele)%x_cub(:,1)) - cos(elements(iele)%x_cub(:,2))
+            end if
+        end do
+        call advecRHS2D
+        do iele = 1, nele
+            elements(iele)%u4 = dt*elements(iele)%rhs
+            elements(iele)%u = elements(iele)%u_error+(elements(iele)%u1+2.0d0*elements(iele)%u2+2.0d0*elements(iele)%u3+elements(iele)%u4)/6.0d0
+        end do
+
+        !residual = residual + norm2(elements(iele)%resiu(:,1))
     end if
     if(icase.eq.-1 .or. icase.eq.4) then
-        if(modulo(tstep,50000).eq.0) print*, tstep, residual
-        if(residual.le.1e-15) exit
+        if(modulo(tstep,5000).eq.0) print*, tstep, residual
+        if(residual.le.5e-15) exit
         if(tstep .ge. 2e7) exit
     end if
-        !print*, 'element 1 solution', elements(1)%u(:,1)
-        !print*, 'element 2 solution', elements(2)%u(:,1)
-        !print*, 'element 3 solution', elements(3)%u(:,1)
-        !print*, 'element 4 solution', elements(4)%u(:,1)
-        !exit
 
     time = time + dt
 end do
+!print*,dt,nstep,timelocal
 if(icase.eq.4) print*, tstep, residual
 
 return

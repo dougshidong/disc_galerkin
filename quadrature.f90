@@ -18,9 +18,9 @@ if(quad_init) return; quad_init = .true.
 quad_npts = order+1
 allocate(quadR(quad_npts), quadW(quad_npts))
 select case(select_node)
-    case(11) ! Legendre-Gauss-Lobatto
+    case(1) ! Legendre-Gauss-Lobatto
         call legendreGLNodesWeights(quad_npts-1, quadR, quadW)
-    case(21) ! Gauss-Legendre
+    case(2) ! Gauss-Legendre
         call JacobiGQ(quadR, quadW, quad_alpha, quad_beta, quad_npts-1)
     case default
         call JacobiGQ(quadR, quadW, quad_alpha, quad_beta, quad_npts-1)
@@ -51,7 +51,7 @@ integer,    intent(in)  :: order
 real(dp),   intent(out)  :: ref(order+1), weights(order+1)
 
 real(dp) :: Jac(order+1, order+1)
-real(dp) :: h, eps = 1.0e-16
+real(dp) :: h, eps = 1.0e-17
 integer ::i
 integer :: lda, info, lwork
 integer,parameter :: lwmax = 100

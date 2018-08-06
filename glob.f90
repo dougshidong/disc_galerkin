@@ -16,13 +16,14 @@ logical :: inodal = 0==0
 ! 2 = x/abs(x)
 ! 3 = Differentiation of sine
 ! 4 = With source term = -sin(x)
-integer :: icase = 1
+integer :: icase = 0
 integer :: iequation = 1
 integer :: swform = 0
-integer, parameter :: ndim = 1
+integer, parameter :: ndim = 2
 integer, parameter :: nstate = 1
-real(dp) :: finalTime = 0.1d0
+real(dp) :: finalTime = 2.5d0
 real(dp), dimension(2) :: wavespeed = (/ 1.0d0, 1.0d0 /)
+!real(dp), dimension(2) :: wavespeed = (/ 0.5d0, 0.5d0 /)
 ! 1 = Evaluate eig[semi-discrete]
 ! 2 = Evaluate eig[semi-discrete] for all wavenumbers
 ! 3 = Find maximum dt for various RK
